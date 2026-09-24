@@ -160,3 +160,28 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;ba
 .program-note>span{display:block;color:#d9b87f;font-size:9px;font-weight:700;letter-spacing:.16em}
 .program-note p{margin:7px 0 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;line-height:1.15}
 @media(max-width:780px){.program-heading{grid-template-columns:1fr;gap:12px}.program-note{min-height:0}}
+
+/* Keyboard-first options and a clear stage for players who know their lanes. */
+.options-button{display:flex;align-items:center;gap:7px;border:1px solid rgba(216,177,113,.52);background:rgba(245,214,157,.055);color:#e2c391;padding:6px 10px;min-height:34px;font-size:10px;letter-spacing:.13em;font-weight:700;white-space:nowrap}
+.options-button:hover,.options-button:focus-visible{background:rgba(241,194,121,.18);color:#ffe1a7}
+.options-button .key-hint{min-width:22px;height:22px;font-size:10px}
+.options-overlay{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:20px;background:rgba(16,11,16,.84);backdrop-filter:blur(8px)}
+.options-overlay.hidden{display:none}
+.options-card{width:min(480px,100%);padding:33px;border:1px solid #d3ad77;background:radial-gradient(circle at 90% 0,rgba(221,170,98,.16),transparent 42%),linear-gradient(135deg,#4a3034,#2e2429);box-shadow:0 25px 70px rgba(0,0,0,.55),inset 0 0 0 7px #33282c,inset 0 0 0 8px rgba(227,186,123,.35)}
+.options-card h2{margin:8px 0 0;font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:53px;line-height:1;color:#fff0d1}
+.options-card h2 span{color:#d6a972}
+.options-card>p{margin:8px 0 24px;color:#ccb69c;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:20px}
+.option-toggle{display:flex;align-items:center;gap:14px;width:100%;padding:15px;border:1px solid rgba(231,190,122,.56);background:rgba(239,198,130,.09);color:#f4dcaf;text-align:left}
+.option-toggle:hover{background:rgba(239,198,130,.17)}
+.option-toggle kbd{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid #e1bd81;font-family:'DM Sans',Arial,sans-serif;font-size:16px;font-weight:700}
+.option-toggle span{display:flex;flex:1;flex-direction:column;gap:4px}
+.option-toggle strong{font-size:11px;letter-spacing:.13em}
+.option-toggle small{color:#baa68e;font-family:'Cormorant Garamond',Georgia,serif;font-size:17px}
+.option-toggle b{color:#ffe3a7;font-size:11px;letter-spacing:.14em}
+.options-close{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:15px}
+.options-help{display:block;margin-top:18px;text-align:center;color:#ad9473;font-size:9px;letter-spacing:.14em}
+.lane-keys.hints-hidden,.stage-bottom.hints-hidden{display:none}
+.stage-frame:has(.lane-keys.hints-hidden) #game-canvas{touch-action:none;cursor:pointer}
+@media(max-width:530px){.header-actions,.masthead-right{gap:7px}.options-button{font-size:0;padding:5px}.options-button .key-hint{font-size:10px}.options-card{padding:25px 19px}.options-card h2{font-size:46px}}
+
+#game-canvas,.lane-key{touch-action:none}

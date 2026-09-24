@@ -24,6 +24,8 @@ type Result = { score: number; perfect: number; great: number; good: number; mis
 type RecordEntry = { score: number; accuracy: number; maxStreak: number };
 type Spark = { lane: number; at: number; angle: number; speed: number; size: number };
 type Impact = { lane: number; at: number; kind: 'hit' | 'miss' | 'offbeat' };
+type HitQuality = 'PERFECT' | 'GREAT' | 'GOOD';
+type ActiveHold = { note: ChartNote; quality: HitQuality };
 
 const pieces: Piece[] = [
   { title: 'Minuet in G', subtitle: 'A graceful first dance', composer: 'Christian Petzold', year: 'c. 1725', file: 'minuet-in-g.mid', note: 'Long filed under Bach’s name, this graceful minuet is now attributed to Christian Petzold.', mood: 'A gentle invitation', difficulty: 'I · Beginner', defaultLevel: 1, number: '01', mark: '♢' },
@@ -62,6 +64,9 @@ const KEYS = ['D', 'F', 'J', 'K'];
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let selected = 0;
 let volume = 0.65;
+let showLaneHints = true;
+let optionsOpen = false;
+let optionsReturnFocus: HTMLElement | null = null;
 const difficultyByPiece = pieces.map(piece => piece.defaultLevel);
 const speedByPiece = pieces.map(() => 1);
 const records: Record<string, RecordEntry> = {};
@@ -70,7 +75,8 @@ const menuZones: MenuZone[] = ['pieces', 'difficulty', 'speed', 'start'];
 let menuZone: MenuZone = 'pieces';
 
 try {
-  const saved = JSON.parse(localStorage.getItem('royal-refrain-settings') || '{}') as { difficulty?: number[]; speed?: number[] };
+  const saved = JSON.parse(localStorage.getItem('royal-refrain-settings') || '{}') as { difficulty?: number[]; speed?: number[]; showLaneHints?: boolean };
+  if (typeof saved.showLaneHints === 'boolean') showLaneHints = saved.showLaneHints;
   pieces.forEach((_, i) => {
     if (Number.isFinite(saved.difficulty?.[i])) difficultyByPiece[i] = Math.max(1, Math.min(5, Math.round(saved.difficulty![i])));
     if (Number.isFinite(saved.speed?.[i])) speedByPiece[i] = Math.max(0.7, Math.min(1.5, Math.round(saved.speed![i] * 20) / 20));
@@ -107,7 +113,7 @@ function saveRecord(accuracy: number) {
 }
 
 function saveSettings() {
-  try { localStorage.setItem('royal-refrain-settings', JSON.stringify({ difficulty: difficultyByPiece, speed: speedByPiece })); } catch { /* Optional. */ }
+  try { localStorage.setItem('royal-refrain-settings', JSON.stringify({ difficulty: difficultyByPiece, speed: speedByPiece, showLaneHints })); } catch { /* Optional. */ }
 }
 
 function playUiTick(up = true) {
@@ -132,6 +138,8 @@ function playUiTick(up = true) {
 const levelNames = ['Prelude', 'Gentle', 'Classical', 'Brisk', 'Virtuoso'];
 const fullscreenLabel = () => `<kbd class="key-hint">⇧ F</kbd> ${document.fullscreenElement ? 'WINDOWED' : 'FULL SCREEN'}`;
 const fullscreenButton = () => `<button class="fullscreen-button" id="fullscreen-button" type="button" aria-label="Toggle full screen">${fullscreenLabel()}</button>`;
+const optionsButton = () => `<button class="options-button" id="options-button" type="button"><kbd class="key-hint">O</kbd> OPTIONS</button>`;
+const optionsMarkup = () => `<div class="options-overlay hidden" id="options-overlay" role="dialog" aria-modal="true" aria-labelledby="options-title"><div class="options-card"><span class="section-kicker">THE CONDUCTOR'S DESK</span><h2 id="options-title">Options<span>.</span></h2><p>Shape the stage to suit your hands.</p><button class="option-toggle" id="lane-hints-toggle" type="button" aria-pressed="${showLaneHints}"><kbd>D</kbd><span><strong>LANE KEY HINTS</strong><small>Show D F J K beneath the notes</small></span><b id="lane-hints-value">${showLaneHints ? 'ON' : 'OFF'}</b></button><button class="secondary-button options-close" id="options-close" type="button"><kbd class="button-key">O</kbd> CLOSE OPTIONS</button><small class="options-help">D OR F TO TOGGLE · O OR ESC TO CLOSE</small></div></div>`;
 let context: AudioContext | null = null;
 let uiContext: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -149,6 +157,12 @@ let accompanimentLayers: AccompanimentLayer[] = [];
 let accompanimentForNote = new Map<MidiNote, number>();
 let accompanimentActiveCount = -1;
 let melodyDucked = false;
+let holdGates = new Map<MidiNote, GainNode>();
+const activeHolds = new Map<number, ActiveHold>();
+const pressedLanes = new Set<number>();
+const keyboardLanes = new Set<number>();
+const pointerLanes = new Map<number, number>();
+let resumeHoldGraceUntil = 0;
 
 let pieceNotes: MidiNote[] = [];
 let chart: ChartNote[] = [];
@@ -185,7 +199,7 @@ function menuMarkup() {
     <div class="salon-shell">
       <header class="masthead">
         <a class="brand" href="#" aria-label="Sitar Hero home"><span class="brand-seal">♬</span><span>SITAR <em>HERO</em></span></a>
-        <div class="masthead-right"><span class="edition">A SALON OF RHYTHM · EST. MMXXVI</span><span class="header-rule">✦</span>${fullscreenButton()}</div>
+        <div class="masthead-right"><span class="edition">A SALON OF RHYTHM · EST. MMXXVI</span><span class="header-rule">✦</span>${optionsButton()}${fullscreenButton()}</div>
       </header>
       <main class="menu-layout">
         <section class="program-panel" aria-labelledby="program-title">
@@ -206,13 +220,14 @@ function menuMarkup() {
           <p class="source-note">Libre MIDI editions from Mutopia and PDMX · <a href="${import.meta.env.BASE_URL}midi/README.md" target="_blank" rel="noopener">Credits &amp; licenses</a></p>
         </section>
       </main>
-      <footer class="site-footer"><span>D/F CHOOSE · J/K MOVE · L PREVIEW · SPACE PLAY</span><span class="footer-center">KEEP YOUR HANDS ON THE KEYS</span><span>USE HEADPHONES FOR THE FULL EXPERIENCE</span></footer>
+      <footer class="site-footer"><span>D/F CHOOSE · J/K MOVE · L PREVIEW · SPACE PLAY</span><span class="footer-center">KEEP YOUR HANDS ON THE KEYS</span><span>USE HEADPHONES FOR THE FULL EXPERIENCE</span></footer>${optionsMarkup()}
     </div>`;
 }
 
 function showMenu() {
   stopPreview();
   stopGame();
+  optionsOpen = false;
   app.innerHTML = menuMarkup();
   window.scrollTo(0, 0);
   document.querySelectorAll<HTMLButtonElement>('[data-piece]').forEach(button => {
@@ -226,6 +241,7 @@ function showMenu() {
   document.querySelector<HTMLButtonElement>('#preview-button')?.addEventListener('click', () => void togglePreview());
   document.querySelector('#start-button')?.addEventListener('pointerdown', () => setMenuZone('start', false));
   bindFullscreenButton();
+  bindOptions();
   document.querySelector('.brand')?.addEventListener('click', event => event.preventDefault());
   setMenuZone('pieces', false);
   if (previewEnabled) void startPreview();
@@ -394,6 +410,43 @@ function bindFullscreenButton() {
   document.querySelector('#fullscreen-button')?.addEventListener('click', () => void toggleFullscreen());
 }
 
+function bindOptions() {
+  document.querySelector('#options-button')?.addEventListener('click', () => void openOptions());
+  document.querySelector('#lane-hints-toggle')?.addEventListener('click', toggleLaneHints);
+  document.querySelector('#options-close')?.addEventListener('click', closeOptions);
+  document.querySelector('#options-overlay')?.addEventListener('click', event => {
+    if (event.target === event.currentTarget) closeOptions();
+  });
+}
+
+async function openOptions() {
+  if (optionsOpen) return;
+  optionsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (playing && !paused) await togglePause();
+  optionsOpen = true;
+  document.querySelector('#options-overlay')?.classList.remove('hidden');
+  document.querySelector<HTMLButtonElement>('#lane-hints-toggle')?.focus({ preventScroll: true });
+}
+
+function closeOptions() {
+  if (!optionsOpen) return;
+  optionsOpen = false;
+  document.querySelector('#options-overlay')?.classList.add('hidden');
+  (optionsReturnFocus?.isConnected ? optionsReturnFocus : document.querySelector<HTMLElement>('#options-button'))?.focus({ preventScroll: true });
+  optionsReturnFocus = null;
+}
+
+function toggleLaneHints() {
+  showLaneHints = !showLaneHints;
+  saveSettings();
+  const toggle = document.querySelector('#lane-hints-toggle');
+  toggle?.setAttribute('aria-pressed', String(showLaneHints));
+  setTextIfChanged('#lane-hints-value', showLaneHints ? 'ON' : 'OFF');
+  document.querySelector('.lane-keys')?.classList.toggle('hints-hidden', !showLaneHints);
+  document.querySelector('.stage-bottom')?.classList.toggle('hints-hidden', !showLaneHints);
+  playUiTick(showLaneHints);
+}
+
 async function toggleFullscreen() {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
@@ -543,17 +596,17 @@ function playMissEffect() {
 
 function gameMarkup(piece: Piece) {
   return `<div class="salon-shell game-shell">
-    <header class="masthead"><button class="back-link" id="back-button">← &nbsp; BACK TO PROGRAMME</button><div class="header-actions"><button class="sound-button" id="volume-button" aria-label="Toggle sound">SOUND <span id="sound-state">${volume ? 'ON' : 'OFF'}</span> ♫</button>${fullscreenButton()}</div></header>
+    <header class="masthead"><button class="back-link" id="back-button">← &nbsp; BACK TO PROGRAMME</button><div class="header-actions"><button class="sound-button" id="volume-button" aria-label="Toggle sound">SOUND <span id="sound-state">${volume ? 'ON' : 'OFF'}</span> ♫</button>${optionsButton()}${fullscreenButton()}</div></header>
     <main class="game-layout"><aside class="game-sidebar">
       <div class="section-kicker">THE CURRENT PIECE <span class="tiny-star">✦</span> NO. ${piece.number}</div>
       <h1>${piece.title}</h1><p class="composer-line">${piece.composer} <span>·</span> ${piece.year}</p><p class="performance-setup">LEVEL ${difficultyByPiece[selected]} &nbsp; ✦ &nbsp; ${speedByPiece[selected].toFixed(2)}× SPEED</p>
       <div class="sidebar-ornament">❦</div><p class="piece-mood">${piece.mood}</p>
-      <div class="score-block"><span class="stat-label">YOUR SCORE</span><strong id="score-display">000000</strong><small class="score-rule">PERFECT 1000 · GREAT 650 · GOOD 350<br/>STREAK ADDS BONUS POINTS</small><small id="game-record">${recordLabel()}</small></div>
+      <div class="score-block"><span class="stat-label">YOUR SCORE</span><strong id="score-display">000000</strong><small class="score-rule">PERFECT 1000 · GREAT 650 · GOOD 350<br/>STREAK AND COMPLETED HOLDS ADD BONUS POINTS</small><small id="game-record">${recordLabel()}</small></div>
       <div class="sidebar-stats"><div><span class="stat-label">STREAK</span><strong id="combo-display">0</strong></div><div><span class="stat-label">ACCURACY</span><strong id="accuracy-display">100%</strong></div></div>
       <div class="progress-heading"><span class="stat-label">PERFORMANCE</span><span id="progress-text">0%</span></div><div class="progress-track"><div id="progress-fill"></div></div>
       <div class="sidebar-tip" id="melody-feedback"><span>✦</span><p id="melody-message">The melody follows your touch.<br/>Miss a note and the music falls quiet.</p></div>
-    </aside><section class="stage-wrap"><div class="stage-top"><span>✦ &nbsp; THE STAGE &nbsp; ✦</span><span id="stage-status">READY YOUR FINGERS</span></div><div class="stage-frame"><canvas id="game-canvas" aria-label="Four lane rhythm game"></canvas><div class="stage-streak" aria-live="polite"><span>CURRENT STREAK</span><strong id="stage-streak-count">0</strong><small id="ensemble-status">SOLO MELODY</small></div><div class="countdown" id="countdown" aria-live="polite"><span>PREPARE TO PLAY</span><strong id="countdown-number">5</strong><small>FINGERS ON D F J K</small></div><div class="lane-keys">${KEYS.map((key, i) => `<button class="lane-key" data-lane="${i}" aria-label="Play lane ${key}">${key}</button>`).join('')}</div><div class="stage-overlay hidden" id="pause-overlay"><span>INTERMISSION</span><h2>Take a breath.</h2><p>CHOOSE WITH A SINGLE KEY</p><div class="pause-actions"><button class="primary-button" id="resume-button"><kbd class="button-key">J</kbd> RESUME PERFORMANCE <span>→</span></button><button class="secondary-button" id="pause-menu-button"><kbd class="button-key">K</kbd> BACK TO PROGRAMME</button></div><small class="menu-shortcut-note">SPACE ALSO RESUMES</small></div></div><div class="stage-bottom"><span>LEFT HAND &nbsp; D &nbsp; F</span><span class="bottom-flourish">❧</span><span>J &nbsp; K &nbsp; RIGHT HAND</span></div></section></main>
-    <footer class="site-footer"><span>SPACE TO PAUSE · SHIFT+F FULL SCREEN</span><span class="footer-center">IN TEMPO · IN SPIRIT</span><span>GOOD FORTUNE, MAESTRO</span></footer>
+    </aside><section class="stage-wrap"><div class="stage-top"><span>✦ &nbsp; THE STAGE &nbsp; ✦</span><span id="stage-status">READY YOUR FINGERS</span></div><div class="stage-frame"><canvas id="game-canvas" aria-label="Four lane rhythm game"></canvas><div class="stage-streak" aria-live="polite"><span>CURRENT STREAK</span><strong id="stage-streak-count">0</strong><small id="ensemble-status">SOLO MELODY</small></div><div class="countdown" id="countdown" aria-live="polite"><span>PREPARE TO PLAY</span><strong id="countdown-number">5</strong><small>FINGERS ON D F J K</small></div><div class="lane-keys ${showLaneHints ? '' : 'hints-hidden'}">${KEYS.map((key, i) => `<button class="lane-key" data-lane="${i}" aria-label="Play lane ${key}">${key}</button>`).join('')}</div><div class="stage-overlay hidden" id="pause-overlay"><span>INTERMISSION</span><h2>Take a breath.</h2><p>CHOOSE WITH A SINGLE KEY</p><div class="pause-actions"><button class="primary-button" id="resume-button"><kbd class="button-key">J</kbd> RESUME PERFORMANCE <span>→</span></button><button class="secondary-button" id="pause-menu-button"><kbd class="button-key">K</kbd> BACK TO PROGRAMME</button></div><small class="menu-shortcut-note">SPACE ALSO RESUMES</small></div></div><div class="stage-bottom ${showLaneHints ? '' : 'hints-hidden'}"><span>LEFT HAND &nbsp; D &nbsp; F</span><span class="bottom-flourish">❧</span><span>J &nbsp; K &nbsp; RIGHT HAND</span></div></section></main>
+    <footer class="site-footer"><span>HOLD THE RIBBONS · SPACE PAUSE · O OPTIONS</span><span class="footer-center">IN TEMPO · IN SPIRIT</span><span>GOOD FORTUNE, MAESTRO</span></footer>${optionsMarkup()}
   </div>`;
 }
 
@@ -576,10 +629,18 @@ async function startGame() {
     melodySources = new Set(arrangement.melody);
     const speed = speedByPiece[selected];
     for (const note of pieceNotes) { note.time /= speed; note.duration /= speed; }
-    for (const note of chart) note.time = note.source.time;
+    for (const note of chart) { note.time = note.source.time; note.holdDuration /= speed; }
     songLength = originalLength / speed;
     if (chart.length < 8) throw new Error('This score has too few playable notes.');
     await prepareAudio();
+    holdGates = new Map();
+    for (const note of chart) {
+      if (!note.holdDuration) continue;
+      const gate = context!.createGain();
+      gate.gain.value = 1;
+      gate.connect(unplayedLead!);
+      holdGates.set(note.source, gate);
+    }
     accompanimentLayers = buildAccompanimentLayers(pieceNotes, melodySources);
     accompanimentForNote = new Map(accompanimentLayers.flatMap((layer, index) => layer.notes.map(note => [note, index] as const)));
     accompanimentBuses = accompanimentLayers.map(() => {
@@ -589,6 +650,10 @@ async function startGame() {
       return bus;
     });
     result = freshResult();
+    activeHolds.clear();
+    pressedLanes.clear();
+    keyboardLanes.clear();
+    pointerLanes.clear();
     result.total = chart.length;
     combo = 0;
     accompanimentActiveCount = -1;
@@ -615,8 +680,14 @@ async function startGame() {
     document.querySelector('#resume-button')?.addEventListener('click', togglePause);
     document.querySelector('#pause-menu-button')?.addEventListener('click', showMenu);
     bindFullscreenButton();
+    bindOptions();
     updateAccompaniment();
-    document.querySelectorAll<HTMLButtonElement>('.lane-key').forEach(button => button.addEventListener('pointerdown', () => hitLane(Number(button.dataset.lane))));
+    document.querySelectorAll<HTMLButtonElement>('.lane-key').forEach(button => button.addEventListener('pointerdown', event => pressPointerLane(event, Number(button.dataset.lane))));
+    canvas!.addEventListener('pointerdown', event => {
+      const rect = canvas!.getBoundingClientRect();
+      const lane = Math.max(0, Math.min(3, Math.floor((event.clientX - rect.left) / rect.width * 4)));
+      pressPointerLane(event, lane);
+    });
     frame = requestAnimationFrame(loop);
   } catch (error) {
     showMenu();
@@ -640,6 +711,12 @@ function stopGame() {
   resizeObserver?.disconnect();
   resizeObserver = null;
   canvas = null;
+  for (const gate of holdGates.values()) gate.disconnect();
+  holdGates.clear();
+  activeHolds.clear();
+  pressedLanes.clear();
+  keyboardLanes.clear();
+  pointerLanes.clear();
   accompanimentBuses = [];
   accompanimentLayers = [];
   accompanimentForNote.clear();
@@ -660,11 +737,84 @@ async function togglePause() {
   document.querySelector('#pause-overlay')?.classList.toggle('hidden', !paused);
   document.querySelector('#stage-status')!.textContent = paused ? 'INTERMISSION' : 'PLAY IN TEMPO';
   if (paused) document.querySelector<HTMLButtonElement>('#resume-button')?.focus({ preventScroll: true });
-  if (paused) await context.suspend(); else await context.resume();
+  if (paused) await context.suspend();
+  else { await context.resume(); resumeHoldGraceUntil = performance.now() + 300; }
+}
+
+function pressPointerLane(event: PointerEvent, lane: number) {
+  if (!playing || paused || optionsOpen) return;
+  event.preventDefault();
+  (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+  pointerLanes.set(event.pointerId, lane);
+  pressedLanes.add(lane);
+  hitLane(lane);
+}
+
+function releasePointerLane(event: PointerEvent) {
+  const lane = pointerLanes.get(event.pointerId);
+  if (lane === undefined) return;
+  pointerLanes.delete(event.pointerId);
+  if (!keyboardLanes.has(lane) && ![...pointerLanes.values()].includes(lane)) {
+    pressedLanes.delete(lane);
+    releaseLane(lane);
+  }
+}
+
+window.addEventListener('pointerup', releasePointerLane);
+window.addEventListener('pointercancel', releasePointerLane);
+
+function awardHit(lane: number, kind: HitQuality, holdDuration = 0) {
+  combo++;
+  updateAccompaniment();
+  result.maxCombo = Math.max(result.maxCombo, combo);
+  const bonus = holdDuration ? Math.round(350 * holdDuration) : 0;
+  if (kind === 'PERFECT') { result.perfect++; result.score += 1000 + combo * 8 + bonus; }
+  if (kind === 'GREAT') { result.great++; result.score += 650 + combo * 5 + bonus; }
+  if (kind === 'GOOD') { result.good++; result.score += 350 + combo * 3 + bonus; }
+  if (combo > 0 && combo % 10 === 0) { comboCelebrationAt = performance.now(); comboCelebrationCount = combo; }
+  impacts.push({ lane, at: performance.now(), kind: 'hit' });
+  judgment = { text: holdDuration ? `HELD ${kind}` : kind, at: performance.now(), color: kind === 'PERFECT' ? '#f4d28a' : kind === 'GREAT' ? '#f6e4b8' : '#e7c3a1' };
+  const sparkCount = kind === 'PERFECT' ? 28 : 18;
+  for (let i = 0; i < sparkCount; i++) sparks.push({ lane, at: performance.now(), angle: Math.PI * 2 * i / sparkCount, speed: 42 + Math.random() * 112, size: 1.5 + Math.random() * 3.3 });
+  updateHud();
+}
+
+function completeHold(lane: number, hold: ActiveHold) {
+  if (activeHolds.get(lane) !== hold) return;
+  hold.note.status = 'hit';
+  activeHolds.delete(lane);
+  restoreMelody();
+  awardHit(lane, hold.quality, hold.note.holdDuration);
+}
+
+function failHold(lane: number, hold: ActiveHold) {
+  if (activeHolds.get(lane) !== hold) return;
+  hold.note.status = 'miss';
+  activeHolds.delete(lane);
+  const gate = holdGates.get(hold.note.source);
+  if (gate && context) {
+    gate.gain.cancelScheduledValues(context.currentTime);
+    gate.gain.setTargetAtTime(0.0001, context.currentTime, 0.035);
+  }
+  result.missed++;
+  combo = 0;
+  updateAccompaniment();
+  duckMelody();
+  playMissEffect();
+  impacts.push({ lane, at: performance.now(), kind: 'miss' });
+  judgment = { text: 'HOLD BROKEN', at: performance.now(), color: '#d7a9a0' };
+  updateHud();
+}
+
+function releaseLane(lane: number) {
+  const hold = activeHolds.get(lane);
+  if (!hold || paused || !context) return;
+  if (heardSongTime() >= hold.note.time + hold.note.holdDuration - 0.12) completeHold(lane, hold);
+  else failHold(lane, hold);
 }
 
 function hitLane(lane: number) {
-  if (!playing || paused || !context) return;
+  if (!playing || paused || !context || activeHolds.has(lane)) return;
   const now = heardSongTime();
   keyGlow[lane] = performance.now();
   let chosen: ChartNote | undefined;
@@ -689,22 +839,17 @@ function hitLane(lane: number) {
     updateHud();
     return;
   }
-  chosen.status = 'hit';
   restoreMelody();
-  combo++;
-  updateAccompaniment();
-  result.maxCombo = Math.max(result.maxCombo, combo);
-  const kind = distance <= 0.065 ? 'PERFECT' : distance <= 0.115 ? 'GREAT' : 'GOOD';
-  if (kind === 'PERFECT') { result.perfect++; result.score += 1000 + combo * 8; }
-  if (kind === 'GREAT') { result.great++; result.score += 650 + combo * 5; }
-  if (kind === 'GOOD') { result.good++; result.score += 350 + combo * 3; }
-  const flourish = combo > 0 && combo % 10 === 0;
-  if (flourish) { comboCelebrationAt = performance.now(); comboCelebrationCount = combo; }
-  impacts.push({ lane, at: performance.now(), kind: 'hit' });
-  judgment = { text: kind, at: performance.now(), color: kind === 'PERFECT' ? '#f4d28a' : kind === 'GREAT' ? '#f6e4b8' : '#e7c3a1' };
-  const sparkCount = kind === 'PERFECT' ? 28 : 18;
-  for (let i = 0; i < sparkCount; i++) sparks.push({ lane, at: performance.now(), angle: Math.PI * 2 * i / sparkCount, speed: 42 + Math.random() * 112, size: 1.5 + Math.random() * 3.3 });
-  updateHud();
+  const kind: HitQuality = distance <= 0.065 ? 'PERFECT' : distance <= 0.115 ? 'GREAT' : 'GOOD';
+  if (chosen.holdDuration) {
+    chosen.status = 'holding';
+    activeHolds.set(lane, { note: chosen, quality: kind });
+    impacts.push({ lane, at: performance.now(), kind: 'hit' });
+    judgment = { text: 'HOLD', at: performance.now(), color: '#f4d28a' };
+  } else {
+    chosen.status = 'hit';
+    awardHit(lane, kind);
+  }
 }
 
 function updateHud() {
@@ -780,7 +925,7 @@ function draw(time: number) {
 
   // A receding, gilded runway makes the round notes feel as though they approach.
   for (let lane = 0; lane < 4; lane++) {
-    const glow = Math.max(0, 1 - (time - keyGlow[lane]) / 180);
+    const glow = activeHolds.has(lane) ? 1 : Math.max(0, 1 - (time - keyGlow[lane]) / 180);
     ctx.beginPath();
     ctx.moveTo(trackX(lane, 0, w, h), 0); ctx.lineTo(trackX(lane + 1, 0, w, h), 0);
     ctx.lineTo(trackX(lane + 1, h, w, h), h); ctx.lineTo(trackX(lane, h, w, h), h); ctx.closePath();
@@ -810,13 +955,63 @@ function draw(time: number) {
   ctx.strokeStyle = '#edc686'; ctx.lineWidth = 2; ctx.shadowColor = '#ffdb9a'; ctx.shadowBlur = 18; ctx.stroke(); ctx.shadowBlur = 0;
   for (let lane = 0; lane < 4; lane++) {
     const x = laneX(lane, targetY, w, h);
-    const pulse = Math.max(0, 1 - (time - keyGlow[lane]) / 210);
+    const pulse = activeHolds.has(lane) ? 1 : Math.max(0, 1 - (time - keyGlow[lane]) / 210);
     ctx.beginPath(); ctx.arc(x, targetY, 28 * uiScale + pulse * 5, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${jewels[lane].glow},${0.15 + pulse * 0.38})`; ctx.fill();
     ctx.strokeStyle = pulse ? jewels[lane].light : '#dab880'; ctx.lineWidth = 3;
     ctx.shadowColor = jewels[lane].mid; ctx.shadowBlur = 14 + pulse * 16; ctx.stroke(); ctx.shadowBlur = 0;
     ctx.beginPath(); ctx.arc(x, targetY, 19 * uiScale, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,236,196,.6)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  const noteY = (songTime: number) => {
+    const progress = 1 - (songTime - now) / 2.8;
+    return 30 + Math.max(0, progress) ** 1.4 * (targetY - 30);
+  };
+  const drawHoldRibbon = (note: ChartNote, headY: number, active: boolean) => {
+    const tailY = Math.max(30, Math.min(targetY, noteY(note.time + note.holdDuration)));
+    if (headY - tailY < 3) return;
+    const jewel = jewels[note.lane];
+    const headX = laneX(note.lane, headY, w, h);
+    const tailX = laneX(note.lane, tailY, w, h);
+    const headWidth = (active ? 15 : 11) * uiScale;
+    const tailWidth = Math.max(4, headWidth * 0.48);
+    const fill = ctx.createLinearGradient(tailX, tailY, headX, headY);
+    fill.addColorStop(0, `rgba(${jewel.glow},.28)`);
+    fill.addColorStop(0.5, `rgba(${jewel.glow},${active ? .83 : .63})`);
+    fill.addColorStop(1, jewel.mid);
+    ctx.beginPath();
+    ctx.moveTo(tailX - tailWidth, tailY);
+    ctx.lineTo(tailX + tailWidth, tailY);
+    ctx.lineTo(headX + headWidth, headY);
+    ctx.lineTo(headX - headWidth, headY);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.shadowColor = jewel.mid;
+    ctx.shadowBlur = active ? 20 : 11;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = active ? '#fff1c8' : jewel.light;
+    ctx.lineWidth = active ? 2.2 : 1.2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY + 3);
+    ctx.lineTo(headX, headY - 3);
+    ctx.strokeStyle = 'rgba(255,250,224,.7)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(tailX, tailY, tailWidth + 2, 0, Math.PI * 2);
+    ctx.fillStyle = jewel.light; ctx.fill();
+  };
+
+  for (const { note } of activeHolds.values()) {
+    drawHoldRibbon(note, targetY, true);
+    const x = laneX(note.lane, targetY, w, h);
+    ctx.beginPath(); ctx.arc(x, targetY, 22 * uiScale, 0, Math.PI * 2);
+    ctx.fillStyle = jewels[note.lane].mid;
+    ctx.shadowColor = jewels[note.lane].light; ctx.shadowBlur = 23; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(x, targetY, 27 * uiScale, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, Math.max(0, (now - note.time) / note.holdDuration)));
+    ctx.strokeStyle = '#fff0bf'; ctx.lineWidth = 4; ctx.stroke();
   }
 
   const firstVisible = firstChartAtOrAfter(now - 0.62);
@@ -826,11 +1021,12 @@ function draw(time: number) {
     if (note.status !== 'pending') continue;
     const progress = 1 - (note.time - now) / 2.8;
     if (progress < 0 || progress > 1.22) continue;
-    const y = 30 + Math.max(0, progress) ** 1.4 * (targetY - 30);
+    const y = noteY(note.time);
     if (y > h + 30) continue;
     const x = laneX(note.lane, y, w, h);
     const radius = (8 + Math.max(0, progress) * 20) * uiScale;
     const jewel = jewels[note.lane];
+    if (note.holdDuration) drawHoldRibbon(note, y, false);
     const halo = ctx.createRadialGradient(x, y, radius * 0.35, x, y, radius * 2.2);
     halo.addColorStop(0, `rgba(${jewel.glow},.52)`); halo.addColorStop(1, `rgba(${jewel.glow},0)`);
     ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2); ctx.fill();
@@ -904,11 +1100,15 @@ function loop(time: number) {
         const melody = melodySources.has(note);
         const layer = accompanimentForNote.get(note);
         if (layer !== undefined && combo < accompanimentLayers[layer].unlockAt) continue;
-        const destination = melody ? unplayedLead : layer === undefined ? master : accompanimentBuses[layer];
+        const destination = melody ? (holdGates.get(note) || unplayedLead) : layer === undefined ? master : accompanimentBuses[layer];
         playMidiNote(note, Math.max(context.currentTime, when), destination!, melody ? 1.1 : 0.65);
       }
     }
     let changed = false;
+    for (const [lane, hold] of activeHolds) {
+      if (now >= hold.note.time + hold.note.holdDuration) completeHold(lane, hold);
+      else if (!pressedLanes.has(lane) && performance.now() > resumeHoldGraceUntil) failHold(lane, hold);
+    }
     while (missIndex < chart.length && now > chart[missIndex].time + 0.18) {
       const note = chart[missIndex++];
       if (note.status === 'pending' && now > note.time + 0.18) {
@@ -930,7 +1130,7 @@ function loop(time: number) {
       const remaining = Math.max(1, Math.min(5, Math.ceil(-now)));
       setTextIfChanged('#countdown-number', String(remaining));
       setTextIfChanged('#stage-status', `BEGINNING IN ${remaining}`);
-    } else setTextIfChanged('#stage-status', judgment && time - judgment.at < 550 && (judgment.text === 'MISSED' || judgment.text === 'OFF BEAT') ? 'THE MELODY FADES' : combo >= 10 ? 'BRAVO! KEEP THE RHYTHM' : 'PLAY IN TEMPO');
+    } else setTextIfChanged('#stage-status', judgment && time - judgment.at < 550 && (judgment.text === 'MISSED' || judgment.text === 'OFF BEAT' || judgment.text === 'HOLD BROKEN') ? 'THE MELODY FADES' : combo >= 10 ? 'BRAVO! KEEP THE RHYTHM' : 'PLAY IN TEMPO');
     if (now > songLength + 1.15) { showResults(); return; }
   }
   draw(time);
@@ -944,11 +1144,13 @@ function showResults() {
   const praise = grade === 'S' ? 'An exquisite performance.' : grade === 'A' ? 'The salon applauds you.' : grade === 'B' ? 'A fine rendition.' : 'Every maestro begins somewhere.';
   const { previous, isBest } = saveRecord(accuracy);
   stopGame();
-  app.innerHTML = `<div class="salon-shell result-shell"><header class="masthead"><a class="brand" href="#"><span class="brand-seal">♬</span><span>SITAR <em>HERO</em></span></a>${fullscreenButton()}</header><main class="result-main"><div class="result-card"><div class="eyebrow"><span class="thin-line"></span> THE FINAL ENCORE <span class="thin-line"></span></div><span class="result-flourish">❦</span><h1>${praise}</h1><p>${piece.title} <span>·</span> ${piece.composer}</p><div class="result-medallion"><span>RANK</span><strong>${grade}</strong></div><div class="result-grid"><div><span>SCORE</span><strong>${result.score.toLocaleString()}</strong></div><div><span>ACCURACY</span><strong>${accuracy}%</strong></div><div><span>BEST STREAK</span><strong>${result.maxCombo}</strong></div></div><div class="record-banner">${isBest ? '✦ NEW PERSONAL BEST ✦' : `PERSONAL BEST · ${previous?.score.toLocaleString()} PTS`} <small>LEVEL ${difficultyByPiece[selected]} · ${speedByPiece[selected].toFixed(2)}× SPEED · SAVED ON THIS DEVICE</small></div><div class="result-detail">${result.perfect} perfect &nbsp;·&nbsp; ${result.great} great &nbsp;·&nbsp; ${result.good} good &nbsp;·&nbsp; ${result.missed} missed &nbsp;·&nbsp; ${result.offbeat} off beat</div><div class="result-actions"><button class="primary-button" id="replay-button"><kbd class="button-key">J</kbd> PLAY AGAIN <span>↻</span></button><button class="secondary-button" id="menu-button"><kbd class="button-key">K</kbd> CHOOSE ANOTHER PIECE</button></div></div></main><footer class="site-footer"><span>J PLAY AGAIN · K PROGRAMME</span><span>BUTTONS ALSO WORK WITH TAB AND ENTER</span></footer></div>`;
+  optionsOpen = false;
+  app.innerHTML = `<div class="salon-shell result-shell"><header class="masthead"><a class="brand" href="#"><span class="brand-seal">♬</span><span>SITAR <em>HERO</em></span></a><div class="masthead-right">${optionsButton()}${fullscreenButton()}</div></header><main class="result-main"><div class="result-card"><div class="eyebrow"><span class="thin-line"></span> THE FINAL ENCORE <span class="thin-line"></span></div><span class="result-flourish">❦</span><h1>${praise}</h1><p>${piece.title} <span>·</span> ${piece.composer}</p><div class="result-medallion"><span>RANK</span><strong>${grade}</strong></div><div class="result-grid"><div><span>SCORE</span><strong>${result.score.toLocaleString()}</strong></div><div><span>ACCURACY</span><strong>${accuracy}%</strong></div><div><span>BEST STREAK</span><strong>${result.maxCombo}</strong></div></div><div class="record-banner">${isBest ? '✦ NEW PERSONAL BEST ✦' : `PERSONAL BEST · ${previous?.score.toLocaleString()} PTS`} <small>LEVEL ${difficultyByPiece[selected]} · ${speedByPiece[selected].toFixed(2)}× SPEED · SAVED ON THIS DEVICE</small></div><div class="result-detail">${result.perfect} perfect &nbsp;·&nbsp; ${result.great} great &nbsp;·&nbsp; ${result.good} good &nbsp;·&nbsp; ${result.missed} missed &nbsp;·&nbsp; ${result.offbeat} off beat</div><div class="result-actions"><button class="primary-button" id="replay-button"><kbd class="button-key">J</kbd> PLAY AGAIN <span>↻</span></button><button class="secondary-button" id="menu-button"><kbd class="button-key">K</kbd> CHOOSE ANOTHER PIECE</button></div></div></main><footer class="site-footer"><span>J PLAY AGAIN · K PROGRAMME</span><span>BUTTONS ALSO WORK WITH TAB AND ENTER</span></footer>${optionsMarkup()}</div>`;
   window.scrollTo(0, 0);
   document.querySelector('#replay-button')?.addEventListener('click', startGame);
   document.querySelector('#menu-button')?.addEventListener('click', showMenu);
   bindFullscreenButton();
+  bindOptions();
   document.querySelector('.brand')?.addEventListener('click', event => { event.preventDefault(); showMenu(); });
   document.querySelector<HTMLButtonElement>('#replay-button')?.focus({ preventScroll: true });
 }
@@ -963,6 +1165,20 @@ window.addEventListener('keydown', resumePreviewFromGesture, { capture: true });
 window.addEventListener('keydown', event => {
   const key = event.key.toUpperCase();
   if (event.shiftKey && key === 'F') { event.preventDefault(); if (!event.repeat) void toggleFullscreen(); return; }
+  if (optionsOpen) {
+    if (key === 'O' || key === 'ESCAPE') { event.preventDefault(); if (!event.repeat) closeOptions(); return; }
+    if (key === 'D' || key === 'F') { event.preventDefault(); if (!event.repeat) toggleLaneHints(); return; }
+    if (key === 'J' || key === 'K' || key === 'TAB') {
+      event.preventDefault();
+      const toggle = document.querySelector<HTMLButtonElement>('#lane-hints-toggle')!;
+      const close = document.querySelector<HTMLButtonElement>('#options-close')!;
+      (document.activeElement === toggle ? close : toggle).focus({ preventScroll: true });
+      return;
+    }
+    if (key === 'ENTER' || key === ' ') { event.preventDefault(); if (!event.repeat) (document.activeElement as HTMLElement)?.click(); return; }
+    return;
+  }
+  if (key === 'O') { event.preventDefault(); if (!event.repeat) void openOptions(); return; }
   if (event.repeat && !document.querySelector('#start-button')) return;
 
   if (playing && paused) {
@@ -976,7 +1192,7 @@ window.addEventListener('keydown', event => {
     if (key === 'ESCAPE' && document.fullscreenElement) return;
     if (key === 'ESCAPE' || key === ' ') { event.preventDefault(); if (!event.repeat) void togglePause(); return; }
     const lane = KEYS.indexOf(key);
-    if (lane >= 0) { event.preventDefault(); if (!event.repeat) hitLane(lane); }
+    if (lane >= 0) { event.preventDefault(); if (!event.repeat) { keyboardLanes.add(lane); pressedLanes.add(lane); hitLane(lane); } }
     return;
   }
 
@@ -1006,6 +1222,16 @@ window.addEventListener('keydown', event => {
     if (key === 'J' || key === 'D') { event.preventDefault(); if (!event.repeat) void startGame(); return; }
     if (key === 'K' || key === 'F') { event.preventDefault(); if (!event.repeat) showMenu(); return; }
     if (key === 'ENTER' || key === ' ') { event.preventDefault(); if (!event.repeat) { if (document.activeElement?.id === 'menu-button') showMenu(); else void startGame(); } }
+  }
+});
+
+window.addEventListener('keyup', event => {
+  const lane = KEYS.indexOf(event.key.toUpperCase());
+  if (lane < 0) return;
+  keyboardLanes.delete(lane);
+  if (![...pointerLanes.values()].includes(lane)) {
+    pressedLanes.delete(lane);
+    releaseLane(lane);
   }
 });
 

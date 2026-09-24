@@ -4,7 +4,8 @@ export type ChartNote = {
   time: number;
   lane: number;
   source: MidiNote;
-  status: 'pending' | 'hit' | 'miss';
+  status: 'pending' | 'holding' | 'hit' | 'miss';
+  holdDuration: number;
 };
 
 export function makeChart(notes: MidiNote[], length: number, difficulty = 3, preferredLeadTrack?: number, mode?: 'sustained'): { chart: ChartNote[]; leadTrack: number; melody: MidiNote[] } {
@@ -51,14 +52,24 @@ export function makeChart(notes: MidiNote[], length: number, difficulty = 3, pre
   // Higher levels add notes without changing the notes already learned.
   const playable = spaced.filter((_, i) => i === 0 || ((i * 0.61803398875) % 1) < density);
   const pitches = [...new Set(spaced.map(note => note.pitch))].sort((a, b) => a - b);
-  return {
-    leadTrack,
-    melody: spaced,
-    chart: playable.map(source => ({
-      time: source.time,
-      lane: Math.min(3, Math.floor(pitches.indexOf(source.pitch) * 4 / pitches.length)),
-      source,
-      status: 'pending',
-    })),
-  };
+  const chart: ChartNote[] = playable.map(source => ({
+    time: source.time,
+    lane: Math.min(3, Math.floor(pitches.indexOf(source.pitch) * 4 / pitches.length)),
+    source,
+    status: 'pending',
+    holdDuration: 0,
+  }));
+  for (let i = 0; i < chart.length; i++) {
+    const note = chart[i];
+    if (note.source.duration < 0.85) continue;
+    let duration = Math.min(note.source.duration, 3.2);
+    for (let j = i + 1; j < chart.length; j++) {
+      if (chart[j].lane === note.lane) {
+        duration = Math.min(duration, chart[j].time - note.time - 0.22);
+        break;
+      }
+    }
+    if (duration >= 0.65) note.holdDuration = duration;
+  }
+  return { leadTrack, melody: spaced, chart };
 }

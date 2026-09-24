@@ -22,6 +22,9 @@ assert(Math.abs(moon.melody[0].time - 19) < 1e-6);
 assert(moon.melody.every(n => Math.abs(n.duration - 1/3) > 0.01), 'Triplet accompaniment must not become targets');
 const spring = read('spring');
 assert(makeChart(spring.notes, 62, 5, 1).chart.every(n => n.source.track === 1), 'Spring must follow the solo violin');
+const satie = read('gymnopedie-no1');
+const satieChart = makeChart(satie.notes, satie.duration, 1, 1).chart;
+assert(satieChart.some(n => n.holdDuration >= 1), 'Satie must include sustained notes to hold');
 const elise = read('fur-elise');
 assert.deepEqual(makeChart(elise.notes, 62, 5, 1).melody.slice(0, 5).map(n => n.pitch), [76,75,76,75,76]);
 for (const filename of bundled) {
@@ -34,6 +37,13 @@ for (const filename of bundled) {
     const selected = new Set(chart.map(n => n.source));
     for(const note of previous) assert(selected.has(note), 'Increasing difficulty must preserve learned notes');
     assert(chart.every(n => melody.includes(n.source) && n.time === n.source.time));
+    for (let i = 0; i < chart.length; i++) {
+      const note = chart[i];
+      assert(note.holdDuration >= 0 && note.holdDuration <= note.source.duration, `${filename} has an invalid hold length`);
+      if (!note.holdDuration) continue;
+      const nextInLane = chart.slice(i + 1).find(other => other.lane === note.lane);
+      if (nextInLane) assert(note.time + note.holdDuration < nextInLane.time, `${filename} has overlapping holds in one lane`);
+    }
     if (/^holst-(?!jupiter-thaxted)/.test(filename) && level === 5) {
       assert(chart[0].time <= 5, `${filename} needs a playable opening`);
       assert(midi.duration - chart.at(-1).time <= 12, `${filename} needs a playable ending`);
