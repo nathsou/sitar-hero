@@ -6,6 +6,7 @@ import './style.css';
 type Piece = {
   title: string;
   subtitle: string;
+  note: string;
   composer: string;
   year: string;
   file: string;
@@ -25,17 +26,36 @@ type Spark = { lane: number; at: number; angle: number; speed: number; size: num
 type Impact = { lane: number; at: number; kind: 'hit' | 'miss' | 'offbeat' };
 
 const pieces: Piece[] = [
-  { title: 'Minuet in G', subtitle: 'A graceful first dance', composer: 'Christian Petzold', year: 'c. 1725', file: 'minuet-in-g.mid', mood: 'A gentle invitation', difficulty: 'I · Beginner', defaultLevel: 1, number: '01', mark: '♢' },
-  { title: 'Für Elise', subtitle: 'The familiar piano reverie', composer: 'Ludwig van Beethoven', year: '1810', file: 'fur-elise.mid', mood: 'Tender & restless', difficulty: 'II · Moderate', defaultLevel: 2, number: '02', mark: '❧' },
-  { title: 'Eine kleine Nachtmusik', subtitle: 'A serenade after dark', composer: 'Wolfgang A. Mozart', year: '1787', file: 'eine-kleine-nachtmusik.mid', mood: 'Bright & spirited', difficulty: 'III · Lively', defaultLevel: 3, number: '03', mark: '✦' },
-  { title: 'Rondo alla Turca', subtitle: 'The Turkish march', composer: 'Wolfgang A. Mozart', year: '1783', file: 'alla-turca.mid', mood: 'A daring finale', difficulty: 'IV · Virtuoso', defaultLevel: 4, number: '04', mark: '❖' },
-  { title: 'Toccata and Fugue', subtitle: 'A dramatic organ overture', composer: 'Johann Sebastian Bach', year: 'c. 1704', file: 'toccata-and-fugue.mid', mood: 'Storm & splendour', difficulty: 'V · Grand', defaultLevel: 5, number: '05', mark: '✥' },
-  { title: 'Canon in D', subtitle: 'A graceful round in three voices', composer: 'Johann Pachelbel', year: '1694', file: 'canon-in-d.mid', mood: 'An unfolding procession', difficulty: 'II · Gentle', defaultLevel: 2, leadTrack: 1, startAt: 8.6, number: '06', mark: '❈' },
-  { title: 'Ode to Joy', subtitle: 'A jubilant anthem', composer: 'Ludwig van Beethoven', year: 'c. 1800', file: 'ode-to-joy.mid', mood: 'Joy without measure', difficulty: 'I · Beginner', defaultLevel: 1, number: '07', mark: '✺' },
-  { title: 'Clair de lune', subtitle: 'Moonlight on the keys', composer: 'Claude Debussy', year: 'c. 1905', file: 'clair-de-lune.mid', mood: 'Silver & stillness', difficulty: 'III · Poetic', defaultLevel: 3, number: '08', mark: '☾' },
-  { title: 'Moonlight Sonata', subtitle: 'Adagio sostenuto', composer: 'Ludwig van Beethoven', year: '1802', file: 'moonlight-sonata.mid', mood: 'A nocturnal hush', difficulty: 'II · Reflective', defaultLevel: 2, leadTrack: 1, melodyMode: 'sustained', startAt: 19, number: '09', mark: '☽' },
-  { title: 'Spring', subtitle: 'The Four Seasons, first movement', composer: 'Antonio Vivaldi', year: '1725', file: 'spring.mid', mood: 'A world awakening', difficulty: 'III · Lively', defaultLevel: 3, leadTrack: 1, startAt: 3.6, number: '10', mark: '❀' },
-  { title: 'Nocturne Op. 9 No. 2', subtitle: 'In E-flat major', composer: 'Frédéric Chopin', year: '1833', file: 'nocturne-op9-no2.mid', mood: 'The midnight salon', difficulty: 'III · Lyrical', defaultLevel: 3, number: '11', mark: '✧' },
+  { title: 'Minuet in G', subtitle: 'A graceful first dance', composer: 'Christian Petzold', year: 'c. 1725', file: 'minuet-in-g.mid', note: 'Long filed under Bach’s name, this graceful minuet is now attributed to Christian Petzold.', mood: 'A gentle invitation', difficulty: 'I · Beginner', defaultLevel: 1, number: '01', mark: '♢' },
+  { title: 'Für Elise', subtitle: 'The familiar piano reverie', composer: 'Ludwig van Beethoven', year: '1810', file: 'fur-elise.mid', note: 'The tiny E–D♯–E turn keeps returning, like a thought the piano cannot quite leave behind.', mood: 'Tender & restless', difficulty: 'II · Moderate', defaultLevel: 2, number: '02', mark: '❧' },
+  { title: 'Eine kleine Nachtmusik', subtitle: 'A serenade after dark', composer: 'Wolfgang A. Mozart', year: '1787', file: 'eine-kleine-nachtmusik.mid', note: 'Its bold opening gives the strings a bright call to answer and pass around.', mood: 'Bright & spirited', difficulty: 'III · Lively', defaultLevel: 3, number: '03', mark: '✦' },
+  { title: 'Rondo alla Turca', subtitle: 'The Turkish march', composer: 'Wolfgang A. Mozart', year: '1783', file: 'alla-turca.mid', note: 'Repeated notes and sharp accents give Mozart’s final movement its irresistible marching pulse.', mood: 'A daring finale', difficulty: 'IV · Virtuoso', defaultLevel: 4, number: '04', mark: '❖' },
+  { title: 'Toccata and Fugue', subtitle: 'A dramatic organ overture', composer: 'Johann Sebastian Bach', year: 'c. 1704', file: 'toccata-and-fugue.mid', note: 'An opening flourish becomes a storm of quick runs: a grand entrance for the organ.', mood: 'Storm & splendour', difficulty: 'V · Grand', defaultLevel: 5, number: '05', mark: '✥' },
+  { title: 'Canon in D', subtitle: 'A graceful round in three voices', composer: 'Johann Pachelbel', year: '1694', file: 'canon-in-d.mid', note: 'Three violin lines follow the same tune, one after another, over a repeating bass.', mood: 'An unfolding procession', difficulty: 'II · Gentle', defaultLevel: 2, leadTrack: 1, startAt: 8.6, number: '06', mark: '❈' },
+  { title: 'Ode to Joy', subtitle: 'A jubilant anthem', composer: 'Ludwig van Beethoven', year: 'c. 1800', file: 'ode-to-joy.mid', note: 'Beethoven builds the tune from small, stepwise motions before it opens into a jubilant anthem.', mood: 'Joy without measure', difficulty: 'I · Beginner', defaultLevel: 1, number: '07', mark: '✺' },
+  { title: 'Clair de lune', subtitle: 'Moonlight on the keys', composer: 'Claude Debussy', year: 'c. 1905', file: 'clair-de-lune.mid', note: 'Debussy lets the melody shimmer and recede, with the piano’s soft harmonies doing as much as the tune.', mood: 'Silver & stillness', difficulty: 'III · Poetic', defaultLevel: 3, number: '08', mark: '☾' },
+  { title: 'Moonlight Sonata', subtitle: 'Adagio sostenuto', composer: 'Ludwig van Beethoven', year: '1802', file: 'moonlight-sonata.mid', note: 'Listen past the rippling triplets: the real melody sings slowly above them.', mood: 'A nocturnal hush', difficulty: 'II · Reflective', defaultLevel: 2, leadTrack: 1, melodyMode: 'sustained', startAt: 19, number: '09', mark: '☽' },
+  { title: 'Spring', subtitle: 'The Four Seasons, first movement', composer: 'Antonio Vivaldi', year: '1725', file: 'spring.mid', note: 'Bright violin figures suggest birdsong before the solo line starts to dance.', mood: 'A world awakening', difficulty: 'III · Lively', defaultLevel: 3, leadTrack: 1, startAt: 3.6, number: '10', mark: '❀' },
+  { title: 'Nocturne Op. 9 No. 2', subtitle: 'In E-flat major', composer: 'Frédéric Chopin', year: '1833', file: 'nocturne-op9-no2.mid', note: 'Chopin’s singing melody returns with ever more elaborate ornament, as though improvising after midnight.', mood: 'The midnight salon', difficulty: 'III · Lyrical', defaultLevel: 3, number: '11', mark: '✧' },
+  { title: 'Gymnopédie No. 1', subtitle: 'A slow Parisian reverie', composer: 'Erik Satie', year: '1888', file: 'gymnopedie-no1.mid', note: 'Marked “Lent et douloureux,” its melody floats over a gentle three-beat piano sway.', mood: 'Still & wistful', difficulty: 'I · Gentle', defaultLevel: 1, leadTrack: 1, number: '12', mark: '☼' },
+  { title: 'Prelude in C', subtitle: 'The Well-Tempered Clavier', composer: 'Johann Sebastian Bach', year: 'c. 1722', file: 'prelude-in-c.mid', note: 'A rolling arpeggio pattern unfolds almost without pause.', mood: 'Clear & flowing', difficulty: 'II · Flowing', defaultLevel: 2, leadTrack: 2, number: '13', mark: '◇' },
+  { title: 'Symphony No. 5', subtitle: 'First movement · Allegro con brio', composer: 'Ludwig van Beethoven', year: '1808', file: 'beethoven-fifth.mid', note: 'The famous four-note call passes around the orchestra.', mood: 'Urgent & fateful', difficulty: 'IV · Grand', defaultLevel: 4, leadTrack: 8, number: '14', mark: '✸' },
+  { title: 'In the Hall of the Mountain King', subtitle: 'Peer Gynt · piano arrangement', composer: 'Edvard Grieg', year: '1874', file: 'hall-of-the-mountain-king.mid', note: 'A small, repeating tune gathers weight as it goes.', mood: 'Mischief gathering', difficulty: 'III · Gathering', defaultLevel: 3, number: '15', mark: '♜' },
+  { title: 'The Entertainer', subtitle: 'A ragtime classic', composer: 'Scott Joplin', year: '1902', file: 'the-entertainer.mid', note: 'The right-hand tune keeps slipping across the steady bass.', mood: 'Jaunty & bright', difficulty: 'III · Ragtime', defaultLevel: 3, number: '16', mark: '♠' },
+  { title: 'Maple Leaf Rag', subtitle: 'A syncopated showpiece', composer: 'Scott Joplin', year: '1899', file: 'maple-leaf-rag.mid', note: 'Bright offbeat phrases bounce above a marching bass.', mood: 'Quick & playful', difficulty: 'IV · Ragtime', defaultLevel: 4, number: '17', mark: '❁' },
+  { title: 'Minute Waltz', subtitle: 'Waltz in D-flat major', composer: 'Frédéric Chopin', year: '1847', file: 'minute-waltz.mid', note: 'The melody whirls over a quick three-beat pulse.', mood: 'Whirling & light', difficulty: 'III · Brisk', defaultLevel: 3, number: '18', mark: '❋' },
+  { title: 'Fantaisie-Impromptu', subtitle: 'A brilliant piano fantasy', composer: 'Frédéric Chopin', year: '19th c.', file: 'fantaisie-impromptu.mid', note: 'Rapid runs frame a gentler central melody.', mood: 'Fierce & tender', difficulty: 'V · Virtuoso', defaultLevel: 5, number: '19', mark: '✧' },
+  { title: 'Winter', subtitle: 'The Four Seasons · first movement', composer: 'Antonio Vivaldi', year: '1725', file: 'winter.mid', note: 'Sharp string attacks give way to quick violin runs.', mood: 'Icy & restless', difficulty: 'IV · Lively', defaultLevel: 4, leadTrack: 1, number: '20', mark: '❄' },
+  { title: 'Hallelujah Chorus', subtitle: 'Messiah · four-voice chorus', composer: 'George Frideric Handel', year: '1741', file: 'hallelujah-chorus.mid', note: 'Four vocal lines answer and overlap in bright harmony.', mood: 'Radiant & bold', difficulty: 'III · Choral', defaultLevel: 3, leadTrack: 1, number: '21', mark: '✠' },
+  { title: 'Wedding March', subtitle: 'A Midsummer Night’s Dream · organ', composer: 'Felix Mendelssohn', year: '1842', file: 'wedding-march.mid', note: 'Broad opening chords lead into a ceremonial procession.', mood: 'Grand & festive', difficulty: 'III · Processional', defaultLevel: 3, leadTrack: 1, number: '22', mark: '♛' },
+  { title: 'Jupiter Theme · Thaxted', subtitle: 'The broad hymn from The Planets', composer: 'Gustav Holst', year: '1921', file: 'holst-jupiter-thaxted.mid', note: 'Holst adapted Jupiter’s sweeping central melody into the hymn tune “Thaxted.”', mood: 'Noble & radiant', difficulty: 'II · Hymn', defaultLevel: 2, leadTrack: 1, number: '23', mark: '♃' },
+  { title: 'Mars, the Bringer of War', subtitle: 'The Planets · I', composer: 'Gustav Holst', year: '1914', file: 'holst-mars.mid', note: 'A relentless five-beat rhythm drives this movement forward like an unstoppable machine.', mood: 'Menacing & martial', difficulty: 'V · Ferocious', defaultLevel: 5, leadTrack: 1, number: '24', mark: '♂' },
+  { title: 'Venus, the Bringer of Peace', subtitle: 'The Planets · II', composer: 'Gustav Holst', year: '1914', file: 'holst-venus.mid', note: 'After Mars, delicate solo lines and spacious chords offer a long breath of calm.', mood: 'Quiet & luminous', difficulty: 'II · Serene', defaultLevel: 2, leadTrack: 1, number: '25', mark: '♀' },
+  { title: 'Mercury, the Winged Messenger', subtitle: 'The Planets · III', composer: 'Gustav Holst', year: '1916', file: 'holst-mercury.mid', note: 'Quick figures dart between instruments, giving Mercury its fleet-footed character.', mood: 'Quick & mercurial', difficulty: 'IV · Nimble', defaultLevel: 4, leadTrack: 1, number: '26', mark: '☿' },
+  { title: 'Jupiter, the Bringer of Jollity', subtitle: 'The Planets · IV', composer: 'Gustav Holst', year: '1914', file: 'holst-jupiter.mid', note: 'Boisterous dances open into the broad tune Holst later adapted as “Thaxted.”', mood: 'Jubilant & grand', difficulty: 'IV · Grand', defaultLevel: 4, leadTrack: 1, number: '27', mark: '♃' },
+  { title: 'Saturn, the Bringer of Old Age', subtitle: 'The Planets · V', composer: 'Gustav Holst', year: '1915', file: 'holst-saturn.mid', note: 'A slow, tolling tread grows into a great swell, then settles into stillness.', mood: 'Solemn & tender', difficulty: 'II · Measured', defaultLevel: 2, leadTrack: 1, number: '28', mark: '♄' },
+  { title: 'Uranus, the Magician', subtitle: 'The Planets · VI', composer: 'Gustav Holst', year: '1915', file: 'holst-uranus.mid', note: 'A four-note spell sets off a mischievous march full of sudden theatrical turns.', mood: 'Impish & theatrical', difficulty: 'IV · Dramatic', defaultLevel: 4, leadTrack: 1, number: '29', mark: '♅' },
+  { title: 'Neptune, the Mystic', subtitle: 'The Planets · VII', composer: 'Gustav Holst', year: '1915', file: 'holst-neptune.mid', note: 'The suite ends in an eerie haze: in the original score, unseen voices fade into silence.', mood: 'Otherworldly & distant', difficulty: 'III · Dreamlike', defaultLevel: 3, leadTrack: 1, number: '30', mark: '♆' },
 ];
 
 const KEYS = ['D', 'F', 'J', 'K'];
@@ -164,27 +184,12 @@ function menuMarkup() {
   return `
     <div class="salon-shell">
       <header class="masthead">
-        <a class="brand" href="#" aria-label="The Royal Refrain home"><span class="brand-seal">♬</span><span>THE <em>ROYAL</em> REFRAIN</span></a>
+        <a class="brand" href="#" aria-label="Sitar Hero home"><span class="brand-seal">♬</span><span>SITAR <em>HERO</em></span></a>
         <div class="masthead-right"><span class="edition">A SALON OF RHYTHM · EST. MMXXVI</span><span class="header-rule">✦</span>${fullscreenButton()}</div>
       </header>
       <main class="menu-layout">
-        <section class="hero-panel control-panel" aria-labelledby="controls-title">
-          <div class="hero-inner control-inner">
-            <div class="eyebrow"><span class="thin-line"></span> THE PLAYER'S DESK <span class="thin-line"></span></div>
-            <div class="control-emblem" aria-hidden="true">♛</div>
-            <h2 id="controls-title">Keyboard guide</h2>
-            <div class="control-group"><span class="control-group-title">IN THE PROGRAMME</span>
-              <div class="control-row"><span class="control-keys"><kbd>D</kbd><kbd>F</kbd></span><span><strong>CHOOSE OR ADJUST</strong><small>Previous · Next</small></span></div>
-              <div class="control-row"><span class="control-keys"><kbd>J</kbd><kbd>K</kbd></span><span><strong>MOVE BETWEEN CONTROLS</strong><small>Up · Down</small></span></div>
-              <div class="control-row"><span class="control-keys"><kbd class="wide-key">SPACE</kbd></span><span><strong>BEGIN PERFORMANCE</strong><small>Any time from the menu</small></span></div>
-              <div class="control-row"><span class="control-keys"><kbd>L</kbd></span><span><strong>TOGGLE PREVIEW</strong><small>Plays as you choose a piece</small></span></div>
-            </div>
-            <div class="control-group playing-guide"><span class="control-group-title">ON THE STAGE</span><div class="play-keys"><kbd>D</kbd><kbd>F</kbd><kbd>J</kbd><kbd>K</kbd><span>Strike the notes at the gilded line.</span></div><div class="play-pause"><kbd>SPACE</kbd> PAUSE THE MUSIC</div></div>
-          </div>
-          <div class="hero-footer"><span>❧ &nbsp; ${pieces.length} SCORES IN THE PROGRAMME &nbsp; ❧</span><span>${String(selected + 1).padStart(2, '0')} / ${String(pieces.length).padStart(2, '0')}</span></div>
-        </section>
         <section class="program-panel" aria-labelledby="program-title">
-          <div class="program-heading"><div><div class="section-kicker">TONIGHT'S PROGRAMME</div><h1 id="program-title">Choose your composition<span>.</span></h1></div><span class="program-flourish" aria-hidden="true">❦</span></div>
+          <div class="program-heading"><div><div class="section-kicker">TONIGHT'S PROGRAMME · <span id="programme-position">${String(selected + 1).padStart(2, '0')} / ${String(pieces.length).padStart(2, '0')}</span></div><h1 id="program-title">Choose your composition<span>.</span></h1></div><aside class="program-note" aria-live="polite"><span>✦ &nbsp; A NOTE FROM THE SCORE</span><p id="piece-note">${pieces[selected].note}</p></aside></div>
           <div class="control-strip"><span>PIECES</span><span><kbd>D</kbd> PREVIOUS <kbd>F</kbd> NEXT <kbd>J</kbd><kbd>K</kbd> MOVE</span></div>
           <div class="piece-list" role="listbox" aria-label="Choose a composition">${pieces.map((piece, i) => `
             <button class="piece-card ${i === selected ? 'selected' : ''}" data-piece="${i}" role="option" aria-selected="${i === selected}">
@@ -198,7 +203,7 @@ function menuMarkup() {
             <div class="setting-card" id="speed-control"><label for="speed-slider">SPEED <output id="speed-value">${speedByPiece[selected].toFixed(2)}×</output></label><input id="speed-slider" type="range" min="0.7" max="1.5" step="0.05" value="${speedByPiece[selected]}"/><div class="range-ends"><span>0.70×</span><span>1.50×</span></div></div>
           </div>
           <div class="selection-foot"><div class="selection-info"><span class="section-kicker">NOW SELECTED</span><strong id="selected-title">${pieces[selected].title}</strong><small id="selected-subtitle">${pieces[selected].subtitle}</small><small id="selected-record">${recordLabel()}</small></div><div class="selection-actions"><button class="secondary-button" id="preview-button" type="button"><kbd class="button-key">L</kbd><span>${previewEnabled ? 'PREVIEW ON' : 'PREVIEW OFF'}</span></button><button class="primary-button" id="start-button"><kbd class="button-key">SPACE</kbd><span>BEGIN PERFORMANCE</span><span class="button-arrow">→</span></button></div></div>
-          <p class="source-note">Libre MIDI editions from the Mutopia Project · <a href="${import.meta.env.BASE_URL}midi/README.md" target="_blank" rel="noopener">Credits &amp; licenses</a></p>
+          <p class="source-note">Libre MIDI editions from Mutopia and PDMX · <a href="${import.meta.env.BASE_URL}midi/README.md" target="_blank" rel="noopener">Credits &amp; licenses</a></p>
         </section>
       </main>
       <footer class="site-footer"><span>D/F CHOOSE · J/K MOVE · L PREVIEW · SPACE PLAY</span><span class="footer-center">KEEP YOUR HANDS ON THE KEYS</span><span>USE HEADPHONES FOR THE FULL EXPERIENCE</span></footer>
@@ -239,8 +244,9 @@ function selectPiece(index: number) {
   });
   document.querySelector('#selected-title')!.textContent = pieces[selected].title;
   document.querySelector('#selected-subtitle')!.textContent = pieces[selected].subtitle;
+  document.querySelector('#piece-note')!.textContent = pieces[selected].note;
   updateRecordLabel();
-  document.querySelector('.hero-footer span:last-child')!.textContent = `${String(selected + 1).padStart(2, '0')} / ${String(pieces.length).padStart(2, '0')}`;
+  document.querySelector('#programme-position')!.textContent = `${String(selected + 1).padStart(2, '0')} / ${String(pieces.length).padStart(2, '0')}`;
   (document.querySelector('#difficulty-slider') as HTMLInputElement).value = String(difficultyByPiece[selected]);
   (document.querySelector('#speed-slider') as HTMLInputElement).value = String(speedByPiece[selected]);
   document.querySelector('#difficulty-value')!.textContent = `${difficultyByPiece[selected]} · ${levelNames[difficultyByPiece[selected] - 1]}`;
@@ -537,7 +543,7 @@ function playMissEffect() {
 
 function gameMarkup(piece: Piece) {
   return `<div class="salon-shell game-shell">
-    <header class="masthead"><button class="back-link" id="back-button">← &nbsp; BACK TO PROGRAMME</button><a class="brand" href="#"><span class="brand-seal">♬</span><span>THE <em>ROYAL</em> REFRAIN</span></a><div class="header-actions"><button class="sound-button" id="volume-button" aria-label="Toggle sound">SOUND <span id="sound-state">${volume ? 'ON' : 'OFF'}</span> ♫</button>${fullscreenButton()}</div></header>
+    <header class="masthead"><button class="back-link" id="back-button">← &nbsp; BACK TO PROGRAMME</button><div class="header-actions"><button class="sound-button" id="volume-button" aria-label="Toggle sound">SOUND <span id="sound-state">${volume ? 'ON' : 'OFF'}</span> ♫</button>${fullscreenButton()}</div></header>
     <main class="game-layout"><aside class="game-sidebar">
       <div class="section-kicker">THE CURRENT PIECE <span class="tiny-star">✦</span> NO. ${piece.number}</div>
       <h1>${piece.title}</h1><p class="composer-line">${piece.composer} <span>·</span> ${piece.year}</p><p class="performance-setup">LEVEL ${difficultyByPiece[selected]} &nbsp; ✦ &nbsp; ${speedByPiece[selected].toFixed(2)}× SPEED</p>
@@ -605,7 +611,6 @@ async function startGame() {
     resizeObserver.observe(canvas!);
     resizeCanvas();
     document.querySelector('#back-button')?.addEventListener('click', showMenu);
-    document.querySelector('.game-shell .brand')?.addEventListener('click', event => { event.preventDefault(); showMenu(); });
     document.querySelector('#volume-button')?.addEventListener('click', toggleVolume);
     document.querySelector('#resume-button')?.addEventListener('click', togglePause);
     document.querySelector('#pause-menu-button')?.addEventListener('click', showMenu);
@@ -939,7 +944,7 @@ function showResults() {
   const praise = grade === 'S' ? 'An exquisite performance.' : grade === 'A' ? 'The salon applauds you.' : grade === 'B' ? 'A fine rendition.' : 'Every maestro begins somewhere.';
   const { previous, isBest } = saveRecord(accuracy);
   stopGame();
-  app.innerHTML = `<div class="salon-shell result-shell"><header class="masthead"><a class="brand" href="#"><span class="brand-seal">♬</span><span>THE <em>ROYAL</em> REFRAIN</span></a>${fullscreenButton()}</header><main class="result-main"><div class="result-card"><div class="eyebrow"><span class="thin-line"></span> THE FINAL ENCORE <span class="thin-line"></span></div><span class="result-flourish">❦</span><h1>${praise}</h1><p>${piece.title} <span>·</span> ${piece.composer}</p><div class="result-medallion"><span>RANK</span><strong>${grade}</strong></div><div class="result-grid"><div><span>SCORE</span><strong>${result.score.toLocaleString()}</strong></div><div><span>ACCURACY</span><strong>${accuracy}%</strong></div><div><span>BEST STREAK</span><strong>${result.maxCombo}</strong></div></div><div class="record-banner">${isBest ? '✦ NEW PERSONAL BEST ✦' : `PERSONAL BEST · ${previous?.score.toLocaleString()} PTS`} <small>LEVEL ${difficultyByPiece[selected]} · ${speedByPiece[selected].toFixed(2)}× SPEED · SAVED ON THIS DEVICE</small></div><div class="result-detail">${result.perfect} perfect &nbsp;·&nbsp; ${result.great} great &nbsp;·&nbsp; ${result.good} good &nbsp;·&nbsp; ${result.missed} missed &nbsp;·&nbsp; ${result.offbeat} off beat</div><div class="result-actions"><button class="primary-button" id="replay-button"><kbd class="button-key">J</kbd> PLAY AGAIN <span>↻</span></button><button class="secondary-button" id="menu-button"><kbd class="button-key">K</kbd> CHOOSE ANOTHER PIECE</button></div></div></main><footer class="site-footer"><span>J PLAY AGAIN · K PROGRAMME</span><span>BUTTONS ALSO WORK WITH TAB AND ENTER</span></footer></div>`;
+  app.innerHTML = `<div class="salon-shell result-shell"><header class="masthead"><a class="brand" href="#"><span class="brand-seal">♬</span><span>SITAR <em>HERO</em></span></a>${fullscreenButton()}</header><main class="result-main"><div class="result-card"><div class="eyebrow"><span class="thin-line"></span> THE FINAL ENCORE <span class="thin-line"></span></div><span class="result-flourish">❦</span><h1>${praise}</h1><p>${piece.title} <span>·</span> ${piece.composer}</p><div class="result-medallion"><span>RANK</span><strong>${grade}</strong></div><div class="result-grid"><div><span>SCORE</span><strong>${result.score.toLocaleString()}</strong></div><div><span>ACCURACY</span><strong>${accuracy}%</strong></div><div><span>BEST STREAK</span><strong>${result.maxCombo}</strong></div></div><div class="record-banner">${isBest ? '✦ NEW PERSONAL BEST ✦' : `PERSONAL BEST · ${previous?.score.toLocaleString()} PTS`} <small>LEVEL ${difficultyByPiece[selected]} · ${speedByPiece[selected].toFixed(2)}× SPEED · SAVED ON THIS DEVICE</small></div><div class="result-detail">${result.perfect} perfect &nbsp;·&nbsp; ${result.great} great &nbsp;·&nbsp; ${result.good} good &nbsp;·&nbsp; ${result.missed} missed &nbsp;·&nbsp; ${result.offbeat} off beat</div><div class="result-actions"><button class="primary-button" id="replay-button"><kbd class="button-key">J</kbd> PLAY AGAIN <span>↻</span></button><button class="secondary-button" id="menu-button"><kbd class="button-key">K</kbd> CHOOSE ANOTHER PIECE</button></div></div></main><footer class="site-footer"><span>J PLAY AGAIN · K PROGRAMME</span><span>BUTTONS ALSO WORK WITH TAB AND ENTER</span></footer></div>`;
   window.scrollTo(0, 0);
   document.querySelector('#replay-button')?.addEventListener('click', startGame);
   document.querySelector('#menu-button')?.addEventListener('click', showMenu);

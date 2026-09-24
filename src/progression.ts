@@ -26,6 +26,13 @@ export function buildAccompanimentLayers(notes: MidiNote[], melody: Set<MidiNote
   }
 
   groups.sort((a, b) => averagePitch(a) - averagePitch(b));
+  // Orchestral scores can have a dozen MIDI parts. Keep four musical entrances
+  // instead of making many buses unlock together at the final streak level.
+  if (groups.length > ACCOMPANIMENT_STREAKS.length) {
+    const merged = Array.from({ length: ACCOMPANIMENT_STREAKS.length }, () => [] as MidiNote[]);
+    groups.forEach((part, index) => merged[Math.floor(index * merged.length / groups.length)].push(...part));
+    groups = merged;
+  }
   return groups.map((part, index) => ({
     name: index === 0 ? 'BASS' : index === 1 ? 'HARMONY' : `VOICE ${index + 1}`,
     notes: part,
