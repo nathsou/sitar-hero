@@ -1,5 +1,10 @@
 # Sitar Hero
 
+## Original prompt
+
+> Let's create **Sitar Hero**, a grand 1700s-inspired classical rhythm game: jeweled notes approach four lanes; press **D, F, J, K** as they reach the rings and hold keys through ribbon notes. Misses fade the melody, while streaks bring in more instruments.
+> First brainstorm what this could look like, what would make it fun and so on.
+
 A Baroque rhythm game set in a candlelit Hall of Mirrors, anno 1730. Jewels glide down a royal carpet; strike **D F J K** as they reach the gilded rings and hold the keys through silk ribbons. Every jewel is a note of the melody. Streaks bring in the orchestra, and misses muffle the melody and send a section home.
 
 Everything is drawn on a canvas and synthesised with the Web Audio API. There are no samples, fonts, CDNs or runtime dependencies.
