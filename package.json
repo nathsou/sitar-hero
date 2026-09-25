@@ -1,0 +1,17 @@
+{
+  "name": "sitar-hero",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A grand Baroque rhythm game: jeweled notes, four lanes, and an orchestra that follows your streak.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "typecheck": "tsc",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}
