@@ -10,6 +10,8 @@ export interface Session {
   sfx: GainNode;
   /** Fumbles and ghost notes, separately adjustable. */
   misses: GainNode;
+  /** How much of the performance goes to the hall reverb. */
+  send: GainNode;
   dispose(fade?: number): void;
 }
 
@@ -116,6 +118,7 @@ export class AudioEngine {
       layers,
       sfx,
       misses,
+      send,
       dispose: (fade = 0.4) => {
         const now = ctx.currentTime;
         out.gain.cancelScheduledValues(now);

@@ -315,7 +315,7 @@ export const ROMANTIC: SongDef[] = [
   song({
     id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Lent et douloureux', composer: 'Erik Satie', year: '1888', era: 'romantic',
     blurb: 'Slow, sorrowful and strange. The hardest thing is not to hurry.',
-    bpm: 72, beatsPerBar: 3, tonic: pc('D'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'waltz',
+    bpm: 72, beatsPerBar: 3, tonic: pc('D'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'lento',
     melody: gymMel, chords: gymCh,
   }),
 ];

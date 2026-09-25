@@ -80,7 +80,9 @@ export function buildChart(song: CompiledSong, difficulty: Difficulty): Chart {
   const rule = RULES[difficulty];
   const pulse = def.pulse;
   // A Maestro ornaments the melody, as any self-respecting Baroque soloist would.
-  const melody = difficulty === 'maestro' ? ornament(song) : song.melody;
+  // Baroque graces belong to Baroque and Classical music, not to Chopin or Satie.
+  const graced = song.def.era === 'baroque' || song.def.era === 'classical';
+  const melody = difficulty === 'maestro' && graced ? ornament(song) : song.melody;
 
   // 1 · Choose which melody notes become gems. Long notes are always kept.
   const kept: MelodyNote[] = [];

@@ -277,9 +277,13 @@ export class Game {
     const def = this.song.def;
     const pulse = def.stringStyle === 'pulse';
     const horns = def.brass === 'horns';
-    // Solo piano music: the pianist's own bass, a soft string pad, harp and distant horns.
+    // Solo piano music: the streak buys pedal, tone and resonance rather than players.
     const piano = def.ensemble === 'piano';
+    const pedal = piano && this.effectiveTier >= 1 ? 0.9 : 0.2;
+    const touch = piano && this.effectiveTier >= 4 ? 1.15 : 1;
     for (const id of LAYER_IDS) {
+      // A solo pianist has no orchestra behind them: only the accompaniment sounds.
+      if (piano && id !== 'keys') continue;
       const notes = this.song.layers[id];
       const dest = this.session.layers[id];
       let i = this.layerCursor[id];
@@ -290,21 +294,19 @@ export class Game {
         const when = Math.max(at, ctx.currentTime);
         switch (id) {
           case 'keys':
-            v.keys(def.keys, dest, when, n.midi, n.dur, n.vel);
+            v.keys(def.keys, dest, when, n.midi, n.dur, Math.min(1, n.vel * touch), pedal);
             break;
           case 'bass':
-            if (piano) v.keys('grand', dest, when, n.midi, n.dur, n.vel * 0.9);
-            else v.cello(dest, when, n.midi, n.dur, n.vel);
+            v.cello(dest, when, n.midi, n.dur, n.vel);
             break;
           case 'strings':
-            v.strings(dest, when, n.midi, n.dur, piano ? n.vel * 0.5 : n.vel, pulse && !piano);
+            v.strings(dest, when, n.midi, n.dur, n.vel, pulse);
             break;
           case 'timpani':
-            if (piano) v.keys('harp', dest, when, n.midi + 24, 1, n.vel * 0.45);
-            else v.timpani(dest, when, n.midi, n.vel);
+            v.timpani(dest, when, n.midi, n.vel);
             break;
           case 'brass':
-            v.brass(dest, when, n.midi, n.dur, piano ? n.vel * 0.5 : n.vel, horns || piano);
+            v.brass(dest, when, n.midi, n.dur, n.vel, horns);
             break;
         }
       }
@@ -393,7 +395,7 @@ export class Game {
     this.energy = Math.min(TIER_THRESHOLDS[4] + 24, this.energy + (j === 'perfect' ? 1.25 : 1));
 
     const now = this.engine.ctx.currentTime;
-    const handle = this.engine.voices.lead(this.opts.lead, this.session.lead, now, n.midi, n.soundDur, n.vel, n.hold);
+    const handle = this.engine.voices.lead(this.opts.lead, this.session.lead, now, n.midi, n.soundDur, Math.min(1, n.vel * this.touch), n.hold);
     if (n.hold) {
       n.holding = true;
       n.holdScoredTo = n.time;
@@ -411,7 +413,7 @@ export class Game {
 
   private playFollower(f: TimedNote, now: number) {
     const at = this.startCtx + f.time;
-    if (at > now + 0.01) this.engine.voices.lead(this.opts.lead, this.session.lead, at, f.midi, f.dur, f.vel * 0.92);
+    if (at > now + 0.01) this.engine.voices.lead(this.opts.lead, this.session.lead, at, f.midi, f.dur, Math.min(1, f.vel * 0.92 * this.touch));
   }
 
   private miss(n: ChartNote, early: boolean) {
@@ -502,9 +504,15 @@ export class Game {
     this.emit({ type: 'tier', tier, up });
   }
 
+  /** At the top tier of a piano piece the pianist plays out: louder and brighter. */
+  private get touch(): number {
+    return this.song.def.ensemble === 'piano' && this.effectiveTier >= 4 ? 1.15 : 1;
+  }
+
   private applyMix(immediate = false) {
     const now = this.engine.ctx.currentTime;
     const eff = this.effectiveTier;
+    const piano = this.song.def.ensemble === 'piano';
     LAYER_IDS.forEach((id, i) => {
       const g = this.session.layers[id].gain;
       const target = i <= eff ? LAYER_LEVEL[id] : 0;
@@ -513,7 +521,9 @@ export class Game {
     });
     const p = this.presence;
     // The soloist sits ~3 dB proud of the orchestra at full presence.
-    this.session.lead.gain.setTargetAtTime(1.4 * (0.3 + 0.7 * p), now, 0.12);
+    const sing = piano && eff >= 2 ? 1.15 : 1;
+    this.session.lead.gain.setTargetAtTime(1.4 * sing * (0.3 + 0.7 * p), now, 0.12);
+    if (piano) this.session.send.gain.setTargetAtTime(eff >= 3 ? 1.5 : 0.9, now, 0.8);
     this.session.leadFilter.frequency.setTargetAtTime(450 + p * p * 11500, now, 0.12);
   }
 

@@ -73,7 +73,15 @@ export function writeReview(r: Results, song: SongDef, diff: Difficulty, speed: 
   if (r.maxStreak >= 100) lines.push(`A run of ${r.maxStreak} notes without blemish drew audible gasps.`);
   else if (r.maxStreak >= 40) lines.push(`At one point ${r.maxStreak} notes fell in unbroken succession.`);
 
-  if (r.maxTier >= 4) {
+  if (song.ensemble === 'piano') {
+    lines.push(
+      r.maxTier >= 4
+        ? 'By the finale the instrument sang with its fullest tone, and the whole hall rang with it.'
+        : r.maxTier <= 1
+          ? 'The soloist, sensing uncertainty, kept the pedal and the tone in check all evening.'
+          : 'The tone warmed as the evening went on, though it never quite bloomed to its fullest.',
+    );
+  } else if (r.maxTier >= 4) {
     const names = layerNames(song);
     lines.push(`By the finale the ${names[4].toLowerCase()} and ${names[3].toLowerCase()} had joined in full splendour, and fireworks bloomed beyond the windows.`);
   }

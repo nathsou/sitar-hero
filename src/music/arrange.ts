@@ -28,14 +28,22 @@ export const LAYER_IDS = ['keys', 'bass', 'strings', 'timpani', 'brass'] as cons
 export type LayerId = (typeof LAYER_IDS)[number];
 
 export function layerNames(def: SongDef): string[] {
-  if (def.ensemble === 'piano') return [KEYS_NAMES[def.keys], 'Bass octaves', 'Strings', 'Harp', 'Horns'];
+  if (def.ensemble === 'piano') return [KEYS_NAMES[def.keys], ...PIANO_TIERS];
   return [KEYS_NAMES[def.keys], 'Violoncello', 'Strings', 'Timpani', def.brass === 'horns' ? 'Horns' : 'Trumpets'];
 }
 
+/**
+ * Solo piano music adds no instruments; a streak lets the pianist play more
+ * expressively instead (see Game.applyMix and scheduleLayers).
+ */
+export const PIANO_TIERS = ['Sustain pedal', 'Singing tone', 'Hall resonance', 'Full tone'];
+const PIANO_MESSAGES = ['', 'The pedal goes down…', 'The melody begins to sing!', 'The hall rings with it!', 'Full tone! Bravissimo!'];
+
 export function joinMessage(def: SongDef, tier: number): string {
+  if (def.ensemble === 'piano') return PIANO_MESSAGES[tier];
   const name = layerNames(def)[tier];
   if (tier === 4) return `${name}! Grand Tutti!`;
-  if (tier === 3 && def.ensemble !== 'piano') return 'The timpani thunder in!';
+  if (tier === 3) return 'The timpani thunder in!';
   return `The ${name.toLowerCase()} join${name.endsWith('s') ? '' : 's'}!`;
 }
 
@@ -180,6 +188,22 @@ function keys(ctx: Ctx): BeatNote[] {
         const k = Math.round(g.inBar / unit);
         if (k % 3 === 0) out.push(note(g.beat, unit * 2.5, bassOf(g.chord, 38), 0.55));
         else voice(g.chord, 55, 72).forEach((m) => out.push(note(g.beat, unit * 0.85, m, 0.3)));
+      }
+      break;
+    }
+
+    case 'lento': {
+      // Satie's Gymnopédies: a low bass note on the downbeat, one chord on the
+      // second beat, both held (on the pedal) to the end of the bar.
+      const bar = def.beatsPerBar;
+      for (const g of grid(ctx, pulse)) {
+        const k = Math.round(g.inBar / pulse);
+        if (k === 0) out.push(note(g.beat, bar * 0.98, bassOf(g.chord, 38), 0.5));
+        else if (k === 1) {
+          // Seventh chords are voiced without the root (already in the bass), keeping the seventh.
+          const c = g.chord.tones.length >= 4 ? { ...g.chord, tones: g.chord.tones.filter((t) => t !== g.chord.root) } : g.chord;
+          voice(c, 54, 68).forEach((m) => out.push(note(g.beat, (bar - pulse) * 0.98, m, 0.3)));
+        }
       }
       break;
     }

@@ -6,7 +6,7 @@ export type LeadKind = 'sitar' | 'harpsichord' | 'piano' | 'grand' | 'violin' | 
 /** The instrument that accompanies from the start (tier 0). */
 export type KeysKind = 'harpsichord' | 'piano' | 'grand' | 'organ' | 'harp' | 'strings';
 /** How that accompaniment is figured. */
-export type KeysStyle = 'comp' | 'waltz' | 'stride' | 'alberti' | 'triplets' | 'arpeggio' | 'block' | 'bass' | 'rhythm' | 'explicit';
+export type KeysStyle = 'comp' | 'waltz' | 'stride' | 'alberti' | 'lento' | 'triplets' | 'arpeggio' | 'block' | 'bass' | 'rhythm' | 'explicit';
 export type BassStyle = 'held' | 'quarters' | 'eighths' | 'explicit';
 export type StringStyle = 'pad' | 'pulse';
 export type Era = 'baroque' | 'classical' | 'romantic' | 'modern' | 'planets' | 'imported';
@@ -65,7 +65,8 @@ export interface SongDef {
   brass: 'trumpets' | 'horns';
   /**
    * Who joins as the streak grows. "orchestra": cello, strings, timpani, brass.
-   * "piano": for solo piano music, the pianist's bass, a soft string pad, harp and horns.
+   * "piano": solo piano music; no one joins, but the pianist plays with more pedal,
+   * tone and resonance as the streak grows.
    */
   ensemble: 'orchestra' | 'piano';
 }

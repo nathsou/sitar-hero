@@ -121,15 +121,19 @@ export class Voices {
     const g = this.ctx.createGain();
     g.gain.value = gain;
     if (kind === 'grand') {
-      // A harder blow sounds brighter as well as louder; and the keyboard spreads
-      // from left (bass) to right (treble), as heard from the bench.
+      // A harder blow sounds brighter as well as louder. The brightness fades
+      // within a quarter of a second of the strike, the piano's signature: a
+      // bright "ping" settling into a round, singing tone.
+      const f = midiToFreq(midi);
       const tone = this.ctx.createBiquadFilter();
       tone.type = 'lowpass';
       tone.Q.value = 0.5;
-      tone.frequency.value = Math.min(16000, midiToFreq(midi) * (3 + 14 * vel * vel) + 600);
+      tone.frequency.setValueAtTime(Math.min(16000, f * (4 + 22 * vel * vel) + 1200), t);
+      tone.frequency.setTargetAtTime(Math.min(12000, f * (2.5 + 9 * vel * vel) + 500), t + 0.02, 0.18);
+      // The keyboard spreads from bass (left) to treble (right), as heard from the bench.
       const pan = this.ctx.createStereoPanner();
       pan.pan.value = Math.max(-0.45, Math.min(0.45, (midi - 62) / 50));
-      src.connect(tone).connect(g).connect(pan).connect(dest);
+      src.connect(tone).connect(g).connect(pan).connect(this.soundboard(dest));
     } else {
       src.connect(g).connect(dest);
     }
@@ -143,6 +147,31 @@ export class Voices {
     };
     return { src, g, damp };
   }
+
+  /**
+   * The grand's soundboard and case: a short, dense wooden resonance that every
+   * string drives. Without it, synthesised strings sound like a bell or an
+   * electric piano. One per destination bus, shared by all its notes.
+   */
+  private soundboard(dest: AudioNode): AudioNode {
+    let input = this.boards.get(dest);
+    if (input) return input;
+    const ctx = this.ctx;
+    input = ctx.createGain();
+    const dry = ctx.createGain();
+    dry.gain.value = 0.75;
+    const conv = ctx.createConvolver();
+    conv.buffer = (this.boardIr ??= soundboardImpulse(ctx));
+    const wet = ctx.createGain();
+    wet.gain.value = 0.55;
+    input.connect(dry).connect(dest);
+    input.connect(conv).connect(wet).connect(dest);
+    this.boards.set(dest, input);
+    return input;
+  }
+
+  private readonly boards = new WeakMap<AudioNode, GainNode>();
+  private boardIr: AudioBuffer | null = null;
 
   // ─── The soloist ────────────────────────────────────────────────────────
 
@@ -414,7 +443,8 @@ export class Voices {
 
   // ─── The orchestra ──────────────────────────────────────────────────────
 
-  keys(kind: KeysKind, dest: AudioNode, t: number, midi: number, dur: number, vel: number) {
+  /** `pedal`: how long the grand's notes ring on past their written length. */
+  keys(kind: KeysKind, dest: AudioNode, t: number, midi: number, dur: number, vel: number, pedal = 0.3) {
     switch (kind) {
       case 'harpsichord':
         this.playBuffer('harpsichord', dest, t, midi, vel * 0.6).damp(t + dur);
@@ -424,7 +454,7 @@ export class Voices {
         break;
       case 'grand':
         // Pedalled: each note rings on a little past its length, as the pedal changes with the harmony.
-        this.playBuffer('grand', dest, t, midi, vel * 0.6, vel * 0.8).damp(t + dur + 0.3);
+        this.playBuffer('grand', dest, t, midi, vel * 0.6, vel * 0.8).damp(t + dur + pedal);
         break;
       case 'harp':
         this.playBuffer('harp', dest, t, midi, vel * 0.6).damp(t + dur * 1.5 + DAMPING.harp.ring);
@@ -603,6 +633,38 @@ export class Voices {
     lfo.start(from);
     return lfo;
   }
+}
+
+/**
+ * A synthetic soundboard response: a few hundred wooden modes, dense and
+ * low-weighted, dying away within about a quarter of a second. Stereo, so the
+ * board also widens the instrument.
+ */
+function soundboardImpulse(ctx: BaseAudioContext): AudioBuffer {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * 0.3);
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let m = 0; m < 220; m++) {
+      // Modes crowd together as frequency rises; the low ones carry the "wood".
+      const f = 70 * Math.pow(60, Math.pow(Math.random(), 1.4));
+      const decay = 0.02 + 0.2 * Math.pow(90 / f, 0.6) * (0.6 + 0.8 * Math.random());
+      const amp = Math.pow(120 / f, 0.7) * (0.5 + Math.random());
+      const w = (2 * Math.PI * f) / sr;
+      const k = Math.exp(-1 / (sr * decay));
+      let e = amp;
+      const ph = Math.random() * Math.PI * 2;
+      for (let i = 0; i < len && e > 1e-4; i++) {
+        d[i] += e * Math.sin(w * i + ph);
+        e *= k;
+      }
+    }
+    let peak = 1e-9;
+    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(d[i]));
+    for (let i = 0; i < len; i++) d[i] /= peak;
+  }
+  return buf;
 }
 
 /** Render one tone of a buffered instrument. */
