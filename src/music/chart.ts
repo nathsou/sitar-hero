@@ -31,6 +31,8 @@ export interface ChartNote {
   time: number;
   lane: number;
   midi: number;
+  /** Loudness 0–1, from the melody's phrasing. */
+  vel: number;
   /** How long the played note should ring, in seconds. */
   soundDur: number;
   hold: boolean;
@@ -109,7 +111,7 @@ export function buildChart(song: CompiledSong, difficulty: Difficulty): Chart {
       followers.push({ time: f.time, dur: f.dur, midi: f.midi, vel: f.vel });
     }
     const hold = n.beats >= 1.5 - EPS && n.dur >= 0.6;
-    notes.push(makeNote(notes.length, n.time, lanes[i], n.midi, n.dur, hold, followers, Math.floor(Math.max(0, n.beat - def.pickup) / phraseBeats), (HOLD_POINTS_PER_BEAT * n.beats) / n.dur));
+    notes.push(makeNote(notes.length, n.time, lanes[i], n.midi, n.vel, n.dur, hold, followers, Math.floor(Math.max(0, n.beat - def.pickup) / phraseBeats), (HOLD_POINTS_PER_BEAT * n.beats) / n.dur));
   }
 
   // 4 · Double-stops: on strong downbeats with room around them, add a harmony gem.
@@ -132,7 +134,7 @@ export function buildChart(song: CompiledSong, difficulty: Difficulty): Chart {
       if (partner < 0) continue;
       // The lower voice sits to the left, unless the melody is already in the leftmost lane.
       const lane = n.lane >= 1 ? n.lane - 1 : 1;
-      const p = makeNote(0, n.time, lane, partner, n.soundDur, false, [], n.phrase, 0);
+      const p = makeNote(0, n.time, lane, partner, n.vel * 0.7, n.soundDur, false, [], n.phrase, 0);
       p.chordWith = n;
       p.harmony = true;
       n.chordWith = p;
@@ -162,11 +164,11 @@ export function buildChart(song: CompiledSong, difficulty: Difficulty): Chart {
 }
 
 function makeNote(
-  id: number, time: number, lane: number, midi: number, dur: number, hold: boolean,
+  id: number, time: number, lane: number, midi: number, vel: number, dur: number, hold: boolean,
   followers: TimedNote[], phrase: number, holdRate: number,
 ): ChartNote {
   return {
-    id, time, lane, midi, soundDur: dur, hold,
+    id, time, lane, midi, vel, soundDur: dur, hold,
     end: hold ? time + dur - Math.min(0.12, dur * 0.15) : time,
     holdRate, followers, chordWith: null, harmony: false, phrase, gilded: false,
     state: 'pending', judgment: null, offset: 0,

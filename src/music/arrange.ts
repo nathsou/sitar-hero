@@ -1,3 +1,4 @@
+import { shapeMelody } from './expression';
 import { parseChords, parseMelody, streamLength, type ChordEvent, type NoteEvent } from './notation';
 import { TempoMap } from './tempo';
 import { pcAtOrAbove, voiceChord, type Chord } from './theory';
@@ -70,8 +71,9 @@ export function compileSong(def: SongDef, speed = 1, score: Score = parseScore(d
     return { time, dur: sec(n.beat + n.beats) - time, midi: n.midi, vel: n.vel };
   };
 
-  const melody: MelodyNote[] = score.melody.map((n) => ({
-    ...timed({ beat: n.beat, beats: n.dur, midi: n.midi, vel: 0.8 }),
+  const vels = shapeMelody(score.melody, def.beatsPerBar, def.pickup ?? 0, def.pulse ?? 1);
+  const melody: MelodyNote[] = score.melody.map((n, i) => ({
+    ...timed({ beat: n.beat, beats: n.dur, midi: n.midi, vel: vels[i] }),
     beat: n.beat,
     beats: n.dur,
   }));

@@ -17,6 +17,20 @@ const CACHE_BUDGET_BYTES = 40 * 1024 * 1024;
 
 const NOOP: SustainHandle = { release() {} };
 
+/**
+ * Fade a gain to silence from `at` without a jump. Cancelling a ramp that is
+ * still in progress (say, a short note released during its attack) would
+ * otherwise snap the gain back to its last fixed value and click.
+ */
+function fadeOut(p: AudioParam, at: number, tau: number) {
+  if (p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(at);
+  else {
+    p.cancelScheduledValues(at);
+    p.setValueAtTime(p.value, at);
+  }
+  p.setTargetAtTime(0, at, tau);
+}
+
 /** How each buffered instrument stops: extra ring after the written length, and damper speed. */
 const DAMPING: Record<BufferKind, { ring: number; tau: number }> = {
   sitar: { ring: 0.12, tau: 0.22 },
@@ -118,7 +132,23 @@ export class Voices {
 
   // ─── The soloist ────────────────────────────────────────────────────────
 
+  /** When the soloist's previous note stops sounding; a note starting before then is slurred. */
+  private leadUntil = 0;
+
   lead(kind: LeadKind, dest: AudioNode, t: number, midi: number, dur: number, vel: number, sustain = false): SustainHandle {
+    const legato = t < this.leadUntil + 0.04;
+    this.leadUntil = sustain ? Infinity : Math.max(t + dur, this.leadUntil === Infinity ? t : this.leadUntil);
+    const handle = this.leadVoice(kind, dest, t, midi, dur, vel, sustain, legato);
+    if (!sustain) return handle;
+    return {
+      release: (at) => {
+        this.leadUntil = Math.max(at, this.ctx.currentTime);
+        handle.release(at);
+      },
+    };
+  }
+
+  private leadVoice(kind: LeadKind, dest: AudioNode, t: number, midi: number, dur: number, vel: number, sustain: boolean, legato: boolean): SustainHandle {
     switch (kind) {
       case 'sitar':
       case 'harpsichord':
@@ -148,13 +178,13 @@ export class Voices {
         };
       }
       case 'violin':
-        return this.sustained(this.violin(dest, t, midi, vel), t, dur, sustain);
+        return this.sustained(this.violin(dest, t, midi, vel, legato), t, dur, sustain);
       case 'organ':
-        return this.sustained(this.organ(dest, t, midi, vel * 0.9), t, dur, sustain);
+        return this.sustained(this.organ(dest, t, midi, vel * 0.9, legato), t, dur, sustain);
       case 'flute':
-        return this.sustained(this.flute(dest, t, midi, vel), t, dur, sustain);
+        return this.sustained(this.flute(dest, t, midi, vel, legato), t, dur, sustain);
       case 'trumpet':
-        return this.sustained(this.brassVoice(dest, t, midi, vel * 1.2, false), t, dur, sustain);
+        return this.sustained(this.brassVoice(dest, t, midi, vel * 1.2, false, legato), t, dur, sustain);
     }
   }
 
@@ -209,14 +239,13 @@ export class Voices {
     for (const o of [o1, o2, lfo]) o.start(t);
     return {
       release: (at) => {
-        g.gain.cancelScheduledValues(at);
-        g.gain.setTargetAtTime(0, at, 0.09);
+        fadeOut(g.gain, at, 0.09);
         for (const o of [o1, o2, lfo]) o.stop(at + 0.8);
       },
     };
   }
 
-  private violin(dest: AudioNode, t: number, midi: number, vel: number): SustainHandle {
+  private violin(dest: AudioNode, t: number, midi: number, vel: number, legato = false): SustainHandle {
     const ctx = this.ctx;
     const f = midiToFreq(midi);
     const oscs = [-5, 5].map((c) => {
@@ -242,24 +271,24 @@ export class Voices {
     const g = ctx.createGain();
     const peak = vel * 0.15;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + 0.06);
-    g.gain.setTargetAtTime(peak * 0.85, t + 0.06, 0.3);
+    const rise = legato ? 0.09 : 0.06;
+    g.gain.linearRampToValueAtTime(peak, t + rise);
+    g.gain.setTargetAtTime(peak * 0.85, t + rise, 0.3);
     for (const o of oscs) o.connect(body1);
     body1.connect(body2).connect(lp).connect(g).connect(dest);
     const lfo = this.vibratoLfo(oscs, t + 0.12, 5.8, 16);
-    this.noiseBurst(dest, t, 3000, 1.2, vel * 0.05, 0.04);
+    this.noiseBurst(dest, t, 3000, 1.2, vel * (legato ? 0.012 : 0.05), 0.04);
     for (const o of oscs) o.start(t);
     return {
       release: (at) => {
-        g.gain.cancelScheduledValues(at);
-        g.gain.setTargetAtTime(0, at, 0.07);
-        for (const o of oscs) o.stop(at + 0.5);
-        lfo.stop(at + 0.5);
+        fadeOut(g.gain, at, 0.1);
+        for (const o of oscs) o.stop(at + 0.8);
+        lfo.stop(at + 0.8);
       },
     };
   }
 
-  private organ(dest: AudioNode, t: number, midi: number, vel: number): SustainHandle {
+  private organ(dest: AudioNode, t: number, midi: number, vel: number, legato = false): SustainHandle {
     const ctx = this.ctx;
     if (!this.organWave) {
       // Drawbars: 8′, 4′, 2⅔′, 2′, 1⅗′, 1⅓′, 1′.
@@ -274,20 +303,19 @@ export class Voices {
     const g = ctx.createGain();
     const peak = vel * 0.09;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + 0.015);
+    g.gain.linearRampToValueAtTime(peak, t + (legato ? 0.03 : 0.015));
     o.connect(g).connect(dest);
-    this.noiseBurst(dest, t, Math.min(8000, f * 3), 3, vel * 0.04, 0.02);
+    if (!legato) this.noiseBurst(dest, t, Math.min(8000, f * 3), 3, vel * 0.04, 0.02);
     o.start(t);
     return {
       release: (at) => {
-        g.gain.cancelScheduledValues(at);
-        g.gain.setTargetAtTime(0, at, 0.04);
-        o.stop(at + 0.4);
+        fadeOut(g.gain, at, 0.06);
+        o.stop(at + 0.5);
       },
     };
   }
 
-  private flute(dest: AudioNode, t: number, midi: number, vel: number): SustainHandle {
+  private flute(dest: AudioNode, t: number, midi: number, vel: number, legato = false): SustainHandle {
     const ctx = this.ctx;
     const f = midiToFreq(midi);
     const o1 = ctx.createOscillator();
@@ -311,8 +339,8 @@ export class Voices {
     const g = ctx.createGain();
     const peak = vel * 0.2;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak * 1.15, t + 0.05);
-    g.gain.setTargetAtTime(peak, t + 0.05, 0.1);
+    g.gain.linearRampToValueAtTime(legato ? peak : peak * 1.15, t + (legato ? 0.07 : 0.05));
+    g.gain.setTargetAtTime(peak, t + 0.07, 0.1);
     o1.connect(g);
     o2g.connect(g);
     bg.connect(g);
@@ -323,15 +351,14 @@ export class Voices {
     breath.start(t, Math.random() * 0.5);
     return {
       release: (at) => {
-        g.gain.cancelScheduledValues(at);
-        g.gain.setTargetAtTime(0, at, 0.06);
-        for (const n of [o1, o2, breath, lfo]) n.stop(at + 0.4);
+        fadeOut(g.gain, at, 0.08);
+        for (const n of [o1, o2, breath, lfo]) n.stop(at + 0.7);
       },
     };
   }
 
   /** Trumpet (bright) or horn (dark and round). */
-  private brassVoice(dest: AudioNode, t: number, midi: number, vel: number, horn: boolean): SustainHandle {
+  private brassVoice(dest: AudioNode, t: number, midi: number, vel: number, horn: boolean, legato = false): SustainHandle {
     const ctx = this.ctx;
     const f = midiToFreq(midi);
     const o1 = ctx.createOscillator();
@@ -340,7 +367,7 @@ export class Voices {
     o2.type = 'square';
     for (const o of [o1, o2]) {
       o.frequency.value = f;
-      o.detune.setValueAtTime(-45, t);
+      o.detune.setValueAtTime(legato ? -8 : -45, t);
       o.detune.linearRampToValueAtTime(0, t + 0.05);
     }
     const mix = ctx.createGain();
@@ -349,14 +376,14 @@ export class Voices {
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
     lp.Q.value = horn ? 0.7 : 1.5;
-    const bright = horn ? 3 : 7;
+    const bright = horn ? 3 : legato ? 4.5 : 7;
     lp.frequency.setValueAtTime(f * 1.2, t);
     lp.frequency.linearRampToValueAtTime(Math.min(9000, f * bright), t + (horn ? 0.09 : 0.05));
     lp.frequency.setTargetAtTime(Math.min(7000, f * (horn ? 2.2 : 4)), t + 0.1, 0.12);
     const g = ctx.createGain();
     const peak = vel * (horn ? 0.14 : 0.12);
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + (horn ? 0.06 : 0.025));
+    g.gain.linearRampToValueAtTime(peak, t + (horn ? 0.06 : legato ? 0.05 : 0.025));
     g.gain.setTargetAtTime(peak * 0.75, t + 0.08, 0.15);
     o1.connect(lp);
     mix.connect(lp);
@@ -364,9 +391,8 @@ export class Voices {
     for (const o of [o1, o2]) o.start(t);
     return {
       release: (at) => {
-        g.gain.cancelScheduledValues(at);
-        g.gain.setTargetAtTime(0, at, 0.05);
-        for (const o of [o1, o2]) o.stop(at + 0.4);
+        fadeOut(g.gain, at, 0.07);
+        for (const o of [o1, o2]) o.stop(at + 0.6);
       },
     };
   }

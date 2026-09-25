@@ -16,6 +16,8 @@ export interface NoteEvent {
   beat: number;
   dur: number; // beats
   midi: number;
+  /** Loudness 0–1, when the source records it (MIDI files do; notation does not). */
+  vel?: number;
 }
 
 export interface ChordEvent {

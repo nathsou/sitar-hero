@@ -389,7 +389,7 @@ export class Game {
     this.energy = Math.min(TIER_THRESHOLDS[4] + 24, this.energy + (j === 'perfect' ? 1.25 : 1));
 
     const now = this.engine.ctx.currentTime;
-    const handle = this.engine.voices.lead(this.opts.lead, this.session.lead, now, n.midi, n.soundDur, n.harmony ? 0.55 : 0.8, n.hold);
+    const handle = this.engine.voices.lead(this.opts.lead, this.session.lead, now, n.midi, n.soundDur, n.vel, n.hold);
     if (n.hold) {
       n.holding = true;
       n.holdScoredTo = n.time;
@@ -407,7 +407,7 @@ export class Game {
 
   private playFollower(f: TimedNote, now: number) {
     const at = this.startCtx + f.time;
-    if (at > now + 0.01) this.engine.voices.lead(this.opts.lead, this.session.lead, at, f.midi, f.dur, 0.72);
+    if (at > now + 0.01) this.engine.voices.lead(this.opts.lead, this.session.lead, at, f.midi, f.dur, f.vel * 0.92);
   }
 
   private miss(n: ChartNote, early: boolean) {
@@ -456,7 +456,9 @@ export class Game {
     if (completed) {
       n.holdDone = true;
       this.holdsCompleted++;
-      h?.release(now + 0.05);
+      // Let the note ring to its written end so it meets the next one, rather than
+      // stopping when the ribbon's scoring window closes.
+      h?.release(Math.max(now + 0.02, this.startCtx + n.time + n.soundDur));
       this.emit({ type: 'holdDone', note: n });
     } else {
       n.holdDropped = true;

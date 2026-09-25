@@ -86,7 +86,7 @@ export function importMidi(buf: ArrayBuffer, fileName: string, id: string): Midi
     const nextBeat = i + 1 < line.length ? q(line[i + 1].tick) : Infinity;
     const end = Math.min(q(n.end), nextBeat);
     if (melody.length && Math.abs(melody[melody.length - 1].beat - beat) < 1e-6) continue;
-    melody.push({ beat, dur: Math.max(1 / 12, end - beat), midi: n.pitch });
+    melody.push({ beat, dur: Math.max(1 / 12, end - beat), midi: n.pitch, vel: n.vel / 127 });
   }
   if (melody.length < 12) throw new Error('No melody could be found in this score.');
 
