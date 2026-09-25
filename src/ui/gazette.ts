@@ -73,7 +73,10 @@ export function writeReview(r: Results, song: SongDef, diff: Difficulty, speed: 
   if (r.maxStreak >= 100) lines.push(`A run of ${r.maxStreak} notes without blemish drew audible gasps.`);
   else if (r.maxStreak >= 40) lines.push(`At one point ${r.maxStreak} notes fell in unbroken succession.`);
 
-  if (r.maxTier >= 4) lines.push('By the finale the trumpets and timpani had joined in full splendour, and fireworks bloomed beyond the windows.');
+  if (r.maxTier >= 4) {
+    const names = layerNames(song);
+    lines.push(`By the finale the ${names[4].toLowerCase()} and ${names[3].toLowerCase()} had joined in full splendour, and fireworks bloomed beyond the windows.`);
+  }
   else if (r.maxTier <= 1) lines.push('The orchestra, sensing uncertainty, never quite dared to join in.');
   else lines.push(`The ${layerNames(song)[r.maxTier].toLowerCase()} joined in at the height of the evening, though the ${layerNames(song)[4].toLowerCase()} stayed in their cases.`);
 

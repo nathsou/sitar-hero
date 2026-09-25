@@ -277,6 +277,8 @@ export class Game {
     const def = this.song.def;
     const pulse = def.stringStyle === 'pulse';
     const horns = def.brass === 'horns';
+    // Solo piano music: the pianist's own bass, a soft string pad, harp and distant horns.
+    const piano = def.ensemble === 'piano';
     for (const id of LAYER_IDS) {
       const notes = this.song.layers[id];
       const dest = this.session.layers[id];
@@ -291,16 +293,18 @@ export class Game {
             v.keys(def.keys, dest, when, n.midi, n.dur, n.vel);
             break;
           case 'bass':
-            v.cello(dest, when, n.midi, n.dur, n.vel);
+            if (piano) v.keys('grand', dest, when, n.midi, n.dur, n.vel * 0.9);
+            else v.cello(dest, when, n.midi, n.dur, n.vel);
             break;
           case 'strings':
-            v.strings(dest, when, n.midi, n.dur, n.vel, pulse);
+            v.strings(dest, when, n.midi, n.dur, piano ? n.vel * 0.5 : n.vel, pulse && !piano);
             break;
           case 'timpani':
-            v.timpani(dest, when, n.midi, n.vel);
+            if (piano) v.keys('harp', dest, when, n.midi + 24, 1, n.vel * 0.45);
+            else v.timpani(dest, when, n.midi, n.vel);
             break;
           case 'brass':
-            v.brass(dest, when, n.midi, n.dur, n.vel, horns);
+            v.brass(dest, when, n.midi, n.dur, piano ? n.vel * 0.5 : n.vel, horns || piano);
             break;
         }
       }

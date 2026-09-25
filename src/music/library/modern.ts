@@ -83,13 +83,13 @@ export const MODERN: SongDef[] = [
   song({
     id: 'entertainer', title: 'The Entertainer', subtitle: 'A Rag Time Two Step', composer: 'Scott Joplin', year: '1902', era: 'modern',
     blurb: 'Syncopation from a century not yet born. “Not fast,” warns the composer.',
-    bpm: 84, beatsPerBar: 2, pickup: 0.5, tonic: pc('C'), lead: 'piano', keys: 'piano', keysStyle: 'stride', bassStyle: 'quarters', stringStyle: 'pulse',
+    bpm: 84, beatsPerBar: 2, pickup: 0.5, tonic: pc('C'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'stride', bassStyle: 'quarters', stringStyle: 'pulse',
     melody: 'D5s D#5s | ' + ragMel, chords: 'N:0.5 | ' + ragCh,
   }),
   song({
     id: 'lune', title: 'Clair de lune', subtitle: 'Suite bergamasque, III', composer: 'Claude Debussy', year: '1905', era: 'modern',
     blurb: 'Moonlight on still water, in nine-eight time. Let every ribbon float.',
-    bpm: 72, beatsPerBar: 4.5, pulse: 1.5, tonic: pc('Db'), lead: 'piano', keys: 'piano', keysStyle: 'arpeggio', brass: 'horns',
+    bpm: 72, beatsPerBar: 4.5, pulse: 1.5, tonic: pc('Db'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'arpeggio', brass: 'horns',
     melody: luneMel, chords: luneCh,
   }),
 ];

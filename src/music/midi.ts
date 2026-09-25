@@ -124,7 +124,7 @@ export function importMidi(buf: ArrayBuffer, fileName: string, id: string): Midi
     subtitle: trackName ? `melody from “${trackName}”` : 'melody from the uppermost voice',
     blurb: `${melody.length} melody notes and ${keysNotes.length} accompanying notes, brought from abroad.`,
     bpm: Math.round(tempo.initialBpm), beatsPerBar, pulse, tonic,
-    melody: '', chords: '', keys: 'piano', keysStyle: 'explicit', lead: 'piano',
+    melody: '', chords: '', keys: 'grand', keysStyle: 'explicit', lead: 'grand',
   });
   return { def, score: { melody, chords, bass: [], keysNotes, tempo, totalBeats } };
 }

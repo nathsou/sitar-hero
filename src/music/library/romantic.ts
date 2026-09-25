@@ -279,19 +279,19 @@ export const ROMANTIC: SongDef[] = [
   song({
     id: 'nocturne', title: 'Nocturne in E-flat', subtitle: 'Op. 9 No. 2', composer: 'Frédéric Chopin', year: '1832', era: 'romantic',
     blurb: 'A singer’s melody for the piano, drifting over a gentle rocking bass.',
-    bpm: 72, beatsPerBar: 6, pulse: 1.5, pickup: 0.5, tonic: pc('Eb'), lead: 'piano', keys: 'piano', keysStyle: 'waltz',
+    bpm: 72, beatsPerBar: 6, pulse: 1.5, pickup: 0.5, tonic: pc('Eb'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'waltz',
     melody: 'Bb4e | ' + noctMel, chords: 'N:0.5 | ' + noctCh,
   }),
   song({
     id: 'fantaisie', title: 'Fantaisie-Impromptu', subtitle: 'Op. 66', composer: 'Frédéric Chopin', year: '1834', era: 'romantic',
     blurb: 'Semiquavers against triplets in a storm of C-sharp minor, then a song of pure calm.',
-    bpm: 88, beatsPerBar: 4, tonic: pc('C#'), lead: 'piano', keys: 'piano', keysStyle: 'triplets',
+    bpm: 88, beatsPerBar: 4, tonic: pc('C#'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'triplets',
     melody: fantMel, chords: fantCh,
   }),
   song({
     id: 'minute', title: 'Minute Waltz', subtitle: 'Op. 64 No. 1', composer: 'Frédéric Chopin', year: '1847', era: 'romantic',
     blurb: 'A little dog chasing its tail. It takes rather more than a minute to master.',
-    bpm: 184, beatsPerBar: 3, tonic: pc('Db'), lead: 'piano', keys: 'piano', keysStyle: 'waltz',
+    bpm: 184, beatsPerBar: 3, tonic: pc('Db'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'waltz',
     melody: minMel, chords: minCh,
   }),
   song({
@@ -315,7 +315,7 @@ export const ROMANTIC: SongDef[] = [
   song({
     id: 'gymnopedie', title: 'Gymnopédie No. 1', subtitle: 'Lent et douloureux', composer: 'Erik Satie', year: '1888', era: 'romantic',
     blurb: 'Slow, sorrowful and strange. The hardest thing is not to hurry.',
-    bpm: 72, beatsPerBar: 3, tonic: pc('D'), lead: 'piano', keys: 'piano', keysStyle: 'waltz',
+    bpm: 72, beatsPerBar: 3, tonic: pc('D'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'waltz',
     melody: gymMel, chords: gymCh,
   }),
 ];

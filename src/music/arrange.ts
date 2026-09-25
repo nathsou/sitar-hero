@@ -28,13 +28,14 @@ export const LAYER_IDS = ['keys', 'bass', 'strings', 'timpani', 'brass'] as cons
 export type LayerId = (typeof LAYER_IDS)[number];
 
 export function layerNames(def: SongDef): string[] {
+  if (def.ensemble === 'piano') return [KEYS_NAMES[def.keys], 'Bass octaves', 'Strings', 'Harp', 'Horns'];
   return [KEYS_NAMES[def.keys], 'Violoncello', 'Strings', 'Timpani', def.brass === 'horns' ? 'Horns' : 'Trumpets'];
 }
 
 export function joinMessage(def: SongDef, tier: number): string {
   const name = layerNames(def)[tier];
   if (tier === 4) return `${name}! Grand Tutti!`;
-  if (tier === 3) return 'The timpani thunder in!';
+  if (tier === 3 && def.ensemble !== 'piano') return 'The timpani thunder in!';
   return `The ${name.toLowerCase()} join${name.endsWith('s') ? '' : 's'}!`;
 }
 

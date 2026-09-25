@@ -2,9 +2,9 @@ import type { ChordEvent, NoteEvent } from './notation';
 import type { TempoMap } from './tempo';
 
 /** Instruments that can play the solo line. */
-export type LeadKind = 'sitar' | 'harpsichord' | 'piano' | 'violin' | 'guitar' | 'organ' | 'flute' | 'trumpet';
+export type LeadKind = 'sitar' | 'harpsichord' | 'piano' | 'grand' | 'violin' | 'guitar' | 'organ' | 'flute' | 'trumpet';
 /** The instrument that accompanies from the start (tier 0). */
-export type KeysKind = 'harpsichord' | 'piano' | 'organ' | 'harp' | 'strings';
+export type KeysKind = 'harpsichord' | 'piano' | 'grand' | 'organ' | 'harp' | 'strings';
 /** How that accompaniment is figured. */
 export type KeysStyle = 'comp' | 'waltz' | 'stride' | 'alberti' | 'triplets' | 'arpeggio' | 'block' | 'bass' | 'rhythm' | 'explicit';
 export type BassStyle = 'held' | 'quarters' | 'eighths' | 'explicit';
@@ -15,6 +15,7 @@ export const LEAD_NAMES: Record<LeadKind, string> = {
   sitar: 'Sitar',
   harpsichord: 'Harpsichord',
   piano: 'Pianoforte',
+  grand: 'Grand piano',
   violin: 'Violin',
   guitar: 'Guitar',
   organ: 'Organ',
@@ -25,6 +26,7 @@ export const LEAD_NAMES: Record<LeadKind, string> = {
 export const KEYS_NAMES: Record<KeysKind, string> = {
   harpsichord: 'Harpsichord',
   piano: 'Pianoforte',
+  grand: 'Grand piano',
   organ: 'Organ',
   harp: 'Harp',
   strings: 'Violas',
@@ -61,6 +63,11 @@ export interface SongDef {
   keysFrom?: number;
   lead: LeadKind;
   brass: 'trumpets' | 'horns';
+  /**
+   * Who joins as the streak grows. "orchestra": cello, strings, timpani, brass.
+   * "piano": for solo piano music, the pianist's bass, a soft string pad, harp and horns.
+   */
+  ensemble: 'orchestra' | 'piano';
 }
 
 /** A parsed score, independent of where it came from (notation or MIDI). */
@@ -88,6 +95,7 @@ export function song(d: Pick<SongDef, RequiredKeys> & Partial<SongDef>): SongDef
     keysStyle: 'comp',
     lead: 'sitar',
     brass: 'trumpets',
+    ensemble: 'orchestra',
     ...d,
   };
 }

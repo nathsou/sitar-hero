@@ -39,7 +39,7 @@ Reached from the title screen or with `O` from the programme. All settings persi
 
 | Setting | What it does |
 | --- | --- |
-| Soloist | Which instrument plays the melody — the composer's own choice, or any instrument in the ensemble |
+| Soloist | Which instrument plays the melody — the composer's own choice, or any other: sitar, harpsichord, pianoforte, grand piano, violin, guitar, organ, flute, trumpet |
 | Timing | Strictness of the judgment windows: Lenient, Standard or Strict |
 | Key letters on the rings | Show or hide the letter engraved on each ring |
 | Timing strip | A bar beneath the rings showing whether recent strikes were early or late |

@@ -1,14 +1,14 @@
 import { midiToFreq } from '../music/theory';
 import type { KeysKind, LeadKind } from '../music/types';
 import { karplus, type PluckParams } from './karplus';
-import { pianoTone, trimTail } from './piano';
+import { grandTone, pianoTone, trimTail } from './piano';
 
 export interface SustainHandle {
   /** Release the note at context time `at`. */
   release(at: number): void;
 }
 
-export type BufferKind = 'sitar' | 'harpsichord' | 'piano' | 'guitar' | 'harp';
+export type BufferKind = 'sitar' | 'harpsichord' | 'piano' | 'grand' | 'guitar' | 'harp';
 
 /** Plucked and struck tones are pre-rendered at this rate; Web Audio resamples on playback. */
 const BUFFER_RATE = 32000;
@@ -36,6 +36,8 @@ const DAMPING: Record<BufferKind, { ring: number; tau: number }> = {
   sitar: { ring: 0.12, tau: 0.22 },
   harpsichord: { ring: 0.02, tau: 0.05 },
   piano: { ring: 0.08, tau: 0.12 },
+  // Felt dampers on long, heavy strings settle more slowly.
+  grand: { ring: 0.15, tau: 0.22 },
   guitar: { ring: 0.3, tau: 0.2 },
   harp: { ring: 0.9, tau: 0.5 },
 };
@@ -113,12 +115,24 @@ export class Voices {
     }
   }
 
-  private playBuffer(kind: BufferKind, dest: AudioNode, t: number, midi: number, gain: number) {
+  private playBuffer(kind: BufferKind, dest: AudioNode, t: number, midi: number, gain: number, vel = 0) {
     const src = this.ctx.createBufferSource();
     src.buffer = this.buffer(kind, midi);
     const g = this.ctx.createGain();
     g.gain.value = gain;
-    src.connect(g).connect(dest);
+    if (kind === 'grand') {
+      // A harder blow sounds brighter as well as louder; and the keyboard spreads
+      // from left (bass) to right (treble), as heard from the bench.
+      const tone = this.ctx.createBiquadFilter();
+      tone.type = 'lowpass';
+      tone.Q.value = 0.5;
+      tone.frequency.value = Math.min(16000, midiToFreq(midi) * (3 + 14 * vel * vel) + 600);
+      const pan = this.ctx.createStereoPanner();
+      pan.pan.value = Math.max(-0.45, Math.min(0.45, (midi - 62) / 50));
+      src.connect(tone).connect(g).connect(pan).connect(dest);
+    } else {
+      src.connect(g).connect(dest);
+    }
     src.start(t);
     const damp = (at: number) => {
       const { tau } = DAMPING[kind];
@@ -153,9 +167,10 @@ export class Voices {
       case 'sitar':
       case 'harpsichord':
       case 'piano':
+      case 'grand':
       case 'guitar': {
-        const gain = vel * (kind === 'sitar' ? 0.9 : kind === 'piano' ? 0.95 : 0.85);
-        const v = this.playBuffer(kind, dest, t, midi, gain);
+        const gain = vel * (kind === 'sitar' ? 0.9 : kind === 'piano' ? 0.95 : kind === 'grand' ? 1.05 : 0.85);
+        const v = this.playBuffer(kind, dest, t, midi, gain, vel);
         if (kind === 'sitar') {
           // A little meend: slide up into the note from just below.
           v.src.playbackRate.setValueAtTime(0.985, t);
@@ -407,6 +422,10 @@ export class Voices {
       case 'piano':
         this.playBuffer('piano', dest, t, midi, vel * 0.55).damp(t + dur + 0.05);
         break;
+      case 'grand':
+        // Pedalled: each note rings on a little past its length, as the pedal changes with the harmony.
+        this.playBuffer('grand', dest, t, midi, vel * 0.6, vel * 0.8).damp(t + dur + 0.3);
+        break;
       case 'harp':
         this.playBuffer('harp', dest, t, midi, vel * 0.6).damp(t + dur * 1.5 + DAMPING.harp.ring);
         break;
@@ -616,10 +635,12 @@ function render(kind: BufferKind, midi: number): Float32Array {
       return ks(f, 4, { t60: 4.5, brightness: 0.55, pluckPos: 0.4, buzz: 0 });
     case 'piano':
       return pianoTone(sr, midi, 4);
+    case 'grand':
+      return grandTone(sr, midi, 6);
   }
 }
 
 /** The tones a lead or keys instrument needs pre-rendered (none for oscillator voices). */
 export function bufferKindFor(kind: LeadKind | KeysKind): BufferKind | null {
-  return kind === 'sitar' || kind === 'harpsichord' || kind === 'piano' || kind === 'guitar' || kind === 'harp' ? kind : null;
+  return kind === 'sitar' || kind === 'harpsichord' || kind === 'piano' || kind === 'grand' || kind === 'guitar' || kind === 'harp' ? kind : null;
 }

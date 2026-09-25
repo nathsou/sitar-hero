@@ -286,7 +286,7 @@ export const CLASSICAL: SongDef[] = [
   song({
     id: 'moonlight', title: 'Moonlight Sonata', subtitle: 'Piano Sonata No. 14, I. Adagio sostenuto', composer: 'Ludwig van Beethoven', year: '1801', era: 'classical',
     blurb: 'Endless triplets under a pale, patient melody. Breathe with the ribbons.',
-    bpm: 56, beatsPerBar: 4, tonic: pc('C#'), lead: 'piano', keys: 'piano', keysStyle: 'triplets', keysFrom: 16,
+    bpm: 56, beatsPerBar: 4, tonic: pc('C#'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'triplets', keysFrom: 16,
     melody: moonMel, chords: moonCh,
   }),
   song({
@@ -298,7 +298,7 @@ export const CLASSICAL: SongDef[] = [
   song({
     id: 'elise', title: 'Für Elise', subtitle: 'Bagatelle No. 25 in A minor', composer: 'Ludwig van Beethoven', year: '1810', era: 'classical',
     blurb: 'Every pupil’s first love. Mind the little rests between the phrases.',
-    bpm: 64, beatsPerBar: 1.5, pulse: 0.5, pickup: 0.5, tonic: pc('A'), lead: 'piano', keys: 'piano', keysStyle: 'arpeggio',
+    bpm: 64, beatsPerBar: 1.5, pulse: 0.5, pickup: 0.5, tonic: pc('A'), lead: 'grand', keys: 'grand', ensemble: 'piano', keysStyle: 'arpeggio',
     melody: 'E5s D#5s | ' + eliseMel, chords: 'N:0.5 | ' + eliseCh,
   }),
   song({

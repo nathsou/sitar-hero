@@ -14,7 +14,7 @@ import { drawTimeline, type TimelineData } from './timeline';
 const SPEEDS = [1, 0.75, 0.5];
 /** Harpsichord notes for menu navigation (a G major pentatonic). */
 const TICKS = [67, 69, 71, 74, 76, 79, 81];
-const LEADS: LeadKind[] = ['sitar', 'harpsichord', 'piano', 'violin', 'guitar', 'organ', 'flute', 'trumpet'];
+const LEADS: LeadKind[] = ['sitar', 'harpsichord', 'piano', 'grand', 'violin', 'guitar', 'organ', 'flute', 'trumpet'];
 const SOLOISTS: Soloist[] = ['composer', ...LEADS];
 const STRICTNESSES: Strictness[] = ['lenient', 'standard', 'strict'];
 const LANE_NAMES = ['ruby', 'sapphire', 'emerald', 'topaz'];
@@ -958,6 +958,10 @@ export class App {
       }
     }
     if (keysBuf) for (const n of song.layers.keys) jobs.push([keysBuf, n.midi]);
+    if (def.ensemble === 'piano') {
+      for (const n of song.layers.bass) jobs.push(['grand', n.midi]);
+      for (const n of song.layers.timpani) jobs.push(['harp', n.midi + 24]);
+    }
     jobs.push(['guitar', 60 + def.tonic], ['harpsichord', 43], ['harpsichord', 44], ['harpsichord', 50], ['harpsichord', 55], ['harpsichord', 56], ['harpsichord', 61]);
     await engine.voices.warm(jobs);
     // The player may have left while the instruments were tuning.
