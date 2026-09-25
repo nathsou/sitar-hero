@@ -61,8 +61,9 @@ export class Renderer {
 
   resize() {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const W = window.innerWidth;
-    const H = window.innerHeight;
+    // A hidden or minimised window can report 0×0; cached layers need at least a pixel.
+    const W = Math.max(1, window.innerWidth);
+    const H = Math.max(1, window.innerHeight);
     this.dpr = dpr;
     this.canvas.width = Math.round(W * dpr);
     this.canvas.height = Math.round(H * dpr);

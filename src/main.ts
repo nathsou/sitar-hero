@@ -7,7 +7,8 @@ const renderer = new Renderer(canvas);
 new App(canvas, renderer);
 
 const loop = () => {
-  renderer.frame();
+  // Schedule first, so one failed frame cannot stop the loop.
   requestAnimationFrame(loop);
+  renderer.frame();
 };
 requestAnimationFrame(loop);

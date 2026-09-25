@@ -277,7 +277,12 @@ kbd {
   gap: 10px;
   padding: 8px 4px 5px;
   margin-top: 6px;
-  background: linear-gradient(180deg, #eee0c1 80%, rgba(238, 224, 193, 0));
+  flex-wrap: wrap;
+  column-gap: 10px;
+  row-gap: 0;
+  background: #eee0c1;
+  border-bottom: 1px solid rgba(122, 84, 32, 0.25);
+  box-shadow: 0 6px 6px -6px rgba(58, 34, 20, 0.25);
   font-style: italic;
   font-weight: 700;
   color: var(--crimson);
@@ -292,12 +297,13 @@ kbd {
 
 .piece {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: 4.6em minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   padding: 6px 10px;
   border-radius: 3px;
+  scroll-margin-top: 48px;
   color: var(--ink);
   cursor: pointer;
   border: 1px solid transparent;
@@ -315,10 +321,12 @@ kbd {
 }
 
 .piece .num {
-  font-size: 17px;
+  font-size: 15px;
   font-style: italic;
   color: var(--crimson);
-  text-align: center;
+  text-align: right;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
 }
 
 .piece .pc {
@@ -1022,6 +1030,10 @@ kbd {
   }
   .timeline .legend {
     margin-left: 0;
+  }
+  /* The footer lists the same keys; inline hints only crowd the controls here. */
+  .d-row kbd {
+    display: none;
   }
 }
 

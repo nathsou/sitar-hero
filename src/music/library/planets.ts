@@ -3,44 +3,55 @@ import { seq, song, type SongDef } from '../types';
 
 const SUITE = { era: 'planets', composer: 'Gustav Holst', year: '1916', keys: 'harp', brass: 'horns' } as const;
 
+// These follow the openings of Holst's score (checked against published excerpts).
+// The atmospheric movements have little tune to speak of, so their charts stay
+// close to the ostinati and motifs that make them recognisable.
+
 // ─── Mars, the Bringer of War (5/4) ────────────────────────────────────────
+// A col legno ostinato on G beneath a slow theme: G, then D, then the D-flat
+// a tritone from the pedal that gives the movement its menace.
 
 const MARS: Record<string, [string, string]> = {
-  O1: ['G3e3 G3e3 G3e3 G3q D4q G3e G3e D4q |', 'G5:5 |'],
-  O2: ['G3e3 G3e3 G3e3 G3q Ab3q G3e G3e Ab3q |', 'G5:5 |'],
-  B1: ['G4w ~G4q |', 'G5:5 |'],
-  B2: ['D5h. Db5h |', 'G5:3 Db:2 |'],
-  B3: ['C5h. Bb4h |', 'C:3 Bb:2 |'],
-  B4: ['G4w ~G4q |', 'G5:5 |'],
-  C1: ['G4e3 G4e3 G4e3 G4q D5q G4e G4e D5q |', 'G5:5 |'],
-  C2: ['G4e3 G4e3 G4e3 G4q Db5q G4e G4e Db5q |', 'Db:5 |'],
-  END: ['G3w ~G3q |', 'G5:5 |'],
+  O: ['G4e3 G4e3 G4e3 G4q G4q G4e G4e G4q |', 'G5:5 |'],
+  OL: ['G3e3 G3e3 G3e3 G3q G3q G3e G3e G3q |', 'G5:5 |'],
+  T1: ['G4w ~G4q |', 'G5:5 |'],
+  T2: ['G4h. D5h |', 'G5:3 G.D:2 |'],
+  T3: ['Db5w ~Db5q |', 'G.Db:5 |'],
+  T4: ['Db5h. r h |', 'G.Db:5 |'],
+  U1: ['G5w ~G5q |', 'G5:5 |'],
+  U2: ['G5h. D6h |', 'G5:3 G.D:2 |'],
+  U3: ['Db6w ~Db6q |', 'G.Db:5 |'],
+  U4: ['Db6h. r h |', 'G.Db:5 |'],
+  END: ['G4e3 G4e3 G4e3 G4q r h. |', 'G5:5 |'],
 };
 
 // ─── Venus, the Bringer of Peace ───────────────────────────────────────────
+// The unaccompanied horn call (F G A-flat | B-flat), answered by flutes and oboes.
 
 const VENUS: Record<string, [string, string]> = {
-  V1: ['Eb4h Bb4h | C5h. Bb4q | Ab4h G4h | Bb4w |', 'Eb:4 | Ab:4 | Fm:2 Eb:2 | Bb:4 |'],
-  V2: ['G5h F5h | Eb5h. D5q | C5h Bb4q C5q | D5w |', 'Eb:2 Bb:2 | Cm:4 | Ab:4 | Bb:4 |'],
-  V3: ['Eb5h G5h | Bb5h. Ab5q | G5q F5q Eb5q D5q | Eb5w |', 'Eb:4 | Eb:2 Ab:2 | Ab:2 Bb:2 | Eb:4 |'],
+  H1: ['F4h G4q Ab4q |', 'N:4 |'],
+  H2: ['Bb4w |', 'N:4 |'],
+  H3: ['F4h G4q Ab4q |', 'Eb:4 |'],
+  H4: ['Bb4q. r e r h |', 'Eb:4 |'],
+  F1: ['F5h G5q Ab5q |', 'Ab:4 |'],
+  F2: ['Bb5w |', 'Eb:4 |'],
+  F3: ['F5h G5q Ab5q |', 'Fm:4 |'],
+  F4: ['Bb5q. r e r h |', 'Eb:4 |'],
+  END: ['Eb5w | ~Eb5w |', 'Eb:4 | Eb:4 |'],
 };
 
 // ─── Mercury, the Winged Messenger (6/8) ───────────────────────────────────
+// Flickering arpeggios that set B-flat major against E major, a tritone apart.
 
 const MERCURY: Record<string, [string, string]> = {
-  M1: ['Bb4e D5e F5e Bb5e F5e D5e |', 'Bb:3 |'],
-  M2: ['E5e G#5e B5e E6e B5e G#5e |', 'E:3 |'],
-  T1: ['F5q Bb5e A5q G5e |', 'Bb:3 |'],
-  T2: ['F5q. D5q. |', 'Bb:3 |'],
-  T3: ['Eb5q G5e F5q Eb5e |', 'Eb:3 |'],
-  T4: ['D5q. Bb4q. |', 'Bb:3 |'],
-  T5: ['C5q Eb5e D5q C5e |', 'F7:3 |'],
-  T6: ['Bb4q. F5q. |', 'Bb:3 |'],
-  T7: ['G5e A5e Bb5e C6e D6e Eb6e |', 'Eb:1.5 F:1.5 |'],
-  T8: ['F6q. r q. |', 'Bb:3 |'],
+  A: ['Bb4e D5e F5e Bb5e F5e D5e |', 'Bb:3 |'],
+  B: ['E5e G#5e B5e E6e B5e G#5e |', 'E:3 |'],
+  C: ['Bb5e F5e D5e Bb4e D5e F5e |', 'Bb:3 |'],
+  D: ['E6e B5e G#5e E5e G#5e B5e |', 'E:3 |'],
+  AB: ['Bb4e D5e F5e E5e G#5e B5e |', 'Bb:1.5 E:1.5 |'],
+  END: ['Bb5q. r q. |', 'Bb:3 |'],
 };
-const MM = 'M1 M2 M1 M2';
-const MT = 'T1 T2 T3 T4 T5 T6 T7 T8';
+const MM = 'A B A B C D C D';
 
 // ─── Jupiter, the Bringer of Jollity ───────────────────────────────────────
 
@@ -64,78 +75,77 @@ const JUPITER: Record<string, [string, string]> = {
 const JB = 'S1 S2 S1 S2 J1 J2 J3 J4 J5 J6 J7 J8 J1 J2 J3 J4 J5 J6 J7 J8 F1 F2 F3 F4';
 
 // ─── Saturn, the Bringer of Old Age ────────────────────────────────────────
+// Flutes and harps tick like a clock between two chords, B over F and A over
+// E-flat, syncopated across the bar.
 
 const SATURN: Record<string, [string, string]> = {
-  S1: ['A4e C5e A4e C5e A4e C5e A4e C5e |', 'Am:4 |'],
-  S2: ['Bb4e D5e Bb4e D5e Bb4e D5e Bb4e D5e |', 'Gm:4 |'],
-  T1: ['C4h D4h | E4h. D4q | C4h B3h | C4w |', 'C:4 | Am:4 | F:2 G:2 | C:4 |'],
-  T2: ['E4h F4h | G4h. F4q | E4h D4h | E4w |', 'C:4 | C:4 | Am:2 G:2 | C:4 |'],
-  T3: ['G4h A4h | Bb4h. A4q | G4h F4h | E4w |', 'C7:4 | F:4 | C:2 Dm:2 | C:4 |'],
-  BELL: ['C5q G4q C5q G4q |', 'C:4 |'],
-  END: ['C4w | ~C4w |', 'C:4 | C:4 |'],
+  S1: ['r q B4h A4q |', 'F.B:3 Eb.A:1 |'],
+  S2: ['~A4q B4h A4q |', 'Eb.A:1 F.B:2 Eb.A:1 |'],
+  L1: ['~A4q B3h A3q |', 'Eb.A:1 F.B:2 Eb.A:1 |'],
+  L2: ['~A3q B3h A3q |', 'Eb.A:1 F.B:2 Eb.A:1 |'],
+  END: ['~A4q r h. |', 'Eb.A:1 N:3 |'],
 };
 
 // ─── Uranus, the Magician (6/8) ────────────────────────────────────────────
+// The spell: G, E-flat, A, B, each held under a fermata.
 
 const URANUS: Record<string, [string, string]> = {
-  U1: ['G4q. Eb4q. | A4q. B4q. |', 'G:1.5 Eb:1.5 | A:1.5 B:1.5 |'],
-  U2: ['G3q. Eb3q. | A3q. B3q. |', 'G:1.5 Eb:1.5 | A:1.5 B:1.5 |'],
-  D1: ['G3e A3e B3e C4q A3e |', 'G:3 |'],
-  D2: ['B3q G3e D4q. |', 'G:1.5 D:1.5 |'],
-  D3: ['C4e B3e A3e B3q G3e |', 'C:1.5 G:1.5 |'],
-  D4: ['A3q. D3q. |', 'D:3 |'],
-  D7: ['E4e D4e C4e B3q A3e |', 'C:1.5 D7:1.5 |'],
-  D8: ['G3q. r q. |', 'G:3 |'],
-  E1: ['D4e D4e D4e G4q. |', 'G:3 |'],
-  E2: ['F#4e E4e D4e G4q. |', 'D:1.5 G:1.5 |'],
-  E3: ['B4e B4e B4e D5q. |', 'G:3 |'],
-  E4: ['C5e B4e A4e G4q. |', 'C:1.5 G:1.5 |'],
-  END: ['G2q. r q. |', 'G:3 |'],
+  G: ['G4h. | ~G4h. |', 'G:3 | G:3 |'],
+  Eb: ['Eb4h. | ~Eb4h. |', 'Eb:3 | Eb:3 |'],
+  A: ['A4h. | ~A4h. |', 'A:3 | A:3 |'],
+  B: ['B3h. | ~B3h. |', 'B:3 | B:3 |'],
+  g: ['G4q. Eb4q. |', 'G:1.5 Eb:1.5 |'],
+  a: ['A4q. B3q. |', 'A:1.5 B:1.5 |'],
+  g2: ['G5q. Eb5q. |', 'G:1.5 Eb:1.5 |'],
+  a2: ['A5q. B4q. |', 'A:1.5 B:1.5 |'],
+  END: ['G4h. | ~G4h. |', 'G:3 | G:3 |'],
 };
-const UD = 'D1 D2 D3 D4 D1 D2 D7 D8';
-const UE = 'E1 E2 E3 E4 E1 E2 E3 E4';
 
 // ─── Neptune, the Mystic (5/4) ─────────────────────────────────────────────
+// Flutes sway between E minor and G-sharp minor; piccolo and oboes answer.
 
 const NEPTUNE: Record<string, [string, string]> = {
-  N1: ['E5e G5e B5e G5e E5e G5e B5e G5e E5e G5e |', 'Em:5 |'],
-  N2: ['G#5e B5e D#6e B5e G#5e B5e D#6e B5e G#5e B5e |', 'G#m:5 |'],
-  C1: ['B4h. G4h |', 'Em:3 C:2 |'],
-  C2: ['A4w ~A4q |', 'D:5 |'],
-  C3: ['B4h. D5h |', 'G:5 |'],
-  C4: ['E5w ~E5q |', 'Em:5 |'],
+  N1: ['G4q E4q G4e E4e D#4e G#4e B4e G#4e |', 'Em:3 G#m:2 |'],
+  N2: ['G4q E4q G4e E4e D#4s G#4s B4s D#5s G#5e r e |', 'Em:3 G#m:2 |'],
+  N3: ['r q G#4h ~G#4h |', 'G#m:5 |'],
+  N4: ['E5q C5q E5q D#5h |', 'C:3 G#m:2 |'],
   END: ['E5w ~E5q | ~E5w ~E5q |', 'Em:5 | Em:5 |'],
 };
 
 // ─── Thaxted (Jupiter's great hymn) ────────────────────────────────────────
 
 const THAX: Record<string, [string, string]> = {
-  b1: ['A4q. C5e B4e. G4s |', 'F:1.5 G:1.5 |'],
-  b2: ['C5e D5e C5q B4q |', 'C:2 G:1 |'],
-  b3: ['A4e B4e A4q G4q |', 'F:1 C:2 |'],
-  b4: ['E4h E4e G4e |', 'C:3 |'],
-  b6: ['C5e D5e E5q E5q |', 'C:3 |'],
-  b7: ['E5e D5e C5q D5q |', 'Am:1 F:1 G:1 |'],
-  b8m: ['C5h G5e E5e |', 'C:3 |'],
-  b9: ['D5q. C5e D5q |', 'G:3 |'],
-  b10: ['E5q G5q E5q |', 'C:3 |'],
-  b11: ['D5q. C5e D5e E5e |', 'G:3 |'],
-  b12: ['C5h G4e G4e |', 'C:3 |'],
-  b13: ['A4q C5q B4q |', 'F:2 G:1 |'],
-  b14: ['A4q G4q E4e G4e |', 'F:1 C:2 |'],
-  b8x: ['C5h E4e G4e |', 'C:3 |'],
-  b8f: ['C5h. |', 'C:3 |'],
+  a1: ['A4q. C5e B4e. G4s |', 'F:1.5 G:1.5 |'],
+  a2: ['C5e D5e C5q B4q |', 'C:2 G:1 |'],
+  a3: ['A4e B4e A4q G4q |', 'F:1 C:2 |'],
+  a4: ['E4h E4e G4e |', 'C:3 |'],
+  a6: ['C5e D5e E5q E5q |', 'C:3 |'],
+  a7: ['E5e D5e C5q D5q |', 'Am:1 F:1 G:1 |'],
+  a8: ['C5h G5e E5e |', 'C:3 |'],
+  b1: ['D5h C5e E5e |', 'G:2 C:1 |'],
+  b2: ['D5q G4q G5e E5e |', 'G:2 C:1 |'],
+  b3: ['D5h E5e G5e |', 'G:2 C:1 |'],
+  b4: ['A5h A5e B5e |', 'F:2 G:1 |'],
+  b5: ['C6q B5q A5q |', 'Am:1 G:1 F:1 |'],
+  b6: ['G5q C6q E5q |', 'C:2 Am:1 |'],
+  b7: ['D5e C5e D5q E5q |', 'G:3 |'],
+  b8: ['G5h E4e G4e |', 'C:3 |'],
+  a8x: ['C5h E4e G4e |', 'C:3 |'],
+  a8f: ['C5h. |', 'C:3 |'],
 };
-const TH1 = 'b1 b2 b3 b4 b1 b2 b6 b7 b8m b9 b10 b11 b12 b13 b14 b1 b2 b3 b4 b1 b2 b6 b7';
+// A · A′ · B · A · A′, as in the hymn: “I vow to thee … the service of my love; /
+// the love that asks no question … the dearest and the best; / the love that never falters …”
+const TB = 'b1 b2 b3 b4 b5 b6 b7 b8';
 
-const [marsMel, marsCh] = seq(MARS, 'O1 O1 O2 O1 B1 B2 B3 B4 O1 O2 O1 O2 B1 B2 B3 B4 O1 O2 O1 O2 O1 O2 C1 C2 C1 C2 B1 B2 B3 B4 C1 C2 C1 C2 END');
-const [venMel, venCh] = seq(VENUS, 'V1 V2 V3 V1 V2 V3');
-const [merMel, merCh] = seq(MERCURY, `${MM} ${MM} ${MT} ${MM} ${MT} ${MM} ${MT} ${MM} ${MM}`);
+const [marsMel, marsCh] = seq(MARS, 'O O O O T1 T2 T3 T4 O O O O U1 U2 U3 U4 OL OL O O T1 T2 T3 T4 O O O O U1 U2 U3 U4 O O END');
+const [venMel, venCh] = seq(VENUS, 'H1 H2 H3 H4 F1 F2 F3 F4 H1 H2 H3 H4 F1 F2 F3 F4 END');
+const [merMel, merCh] = seq(MERCURY, `${MM} ${MM} AB AB AB AB ${MM} AB AB AB AB ${MM} ${MM} END`);
 const [jupMel, jupCh] = seq(JUPITER, `${JB} ${JB} ${JB} END`);
-const [satMel, satCh] = seq(SATURN, 'S1 S2 S1 S2 T1 T2 T3 S1 S2 BELL BELL BELL BELL T1 T3 END');
-const [uraMel, uraCh] = seq(URANUS, `U1 U2 ${UD} ${UD} ${UE} ${UD} ${UE} U1 END`);
-const [nepMel, nepCh] = seq(NEPTUNE, 'N1 N2 N1 N2 N1 N2 C1 C2 C3 C4 N1 N2 N1 N2 C1 C2 C3 C4 N1 N2 N1 N2 END');
-const [thaxMel, thaxCh] = seq(THAX, `${TH1} b8x ${TH1} b8f`);
+const [satMel, satCh] = seq(SATURN, 'S1 S2 S2 S2 S2 S2 L1 L2 L2 L2 S1 S2 S2 S2 END');
+const [uraMel, uraCh] = seq(URANUS, 'G Eb A B g a g a g2 a2 g2 a2 G Eb A B g a g a g2 a2 g2 a2 G Eb A B END');
+const [nepMel, nepCh] = seq(NEPTUNE, 'N1 N2 N3 N4 N1 N2 N3 N4 N1 N2 N3 N4 END');
+const TA = 'a1 a2 a3 a4 a1 a6 a7';
+const [thaxMel, thaxCh] = seq(THAX, `${TA} a8 ${TB} ${TA} a8x ${TA} a8 ${TB} ${TA} a8f`);
 
 export const PLANETS: SongDef[] = [
   song({
@@ -147,13 +157,13 @@ export const PLANETS: SongDef[] = [
   }),
   song({
     ...SUITE, id: 'venus', title: 'Venus', subtitle: 'the Bringer of Peace',
-    blurb: 'A horn calls, the flutes answer, and all is stillness. Hold every ribbon.',
-    bpm: 60, beatsPerBar: 4, tonic: pc('Eb'), lead: 'flute', keysStyle: 'arpeggio',
+    blurb: 'A lone horn rises four notes; flutes and oboes answer. Hold every ribbon.',
+    bpm: 60, beatsPerBar: 4, tonic: pc('Eb'), lead: 'flute', keysStyle: 'block', keys: 'strings',
     melody: venMel, chords: venCh,
   }),
   song({
     ...SUITE, id: 'mercury', title: 'Mercury', subtitle: 'the Winged Messenger',
-    blurb: 'Two keys at once, darting like quicksilver. Blink and he is gone.',
+    blurb: 'B-flat major and E major, a tritone apart, flicker past like quicksilver.',
     bpm: 150, beatsPerBar: 3, pulse: 1.5, tonic: pc('Bb'), lead: 'flute', keysStyle: 'waltz',
     melody: merMel, chords: merCh,
   }),
@@ -165,19 +175,19 @@ export const PLANETS: SongDef[] = [
   }),
   song({
     ...SUITE, id: 'saturn', title: 'Saturn', subtitle: 'the Bringer of Old Age',
-    blurb: 'A clock ticks; a slow procession approaches; bells toll. Patience, soloist.',
-    bpm: 66, beatsPerBar: 4, tonic: pc('C'), lead: 'organ', keys: 'organ', keysStyle: 'block',
+    blurb: 'Two chords tick like an old clock, slower than a heartbeat. Patience, soloist.',
+    bpm: 56, beatsPerBar: 4, tonic: pc('A'), lead: 'organ', keys: 'organ', keysStyle: 'block',
     melody: satMel, chords: satCh,
   }),
   song({
     ...SUITE, id: 'uranus', title: 'Uranus', subtitle: 'the Magician',
-    blurb: 'Four notes cast the spell (G, E-flat, A, B), then the bassoons begin to dance.',
-    bpm: 150, beatsPerBar: 3, pulse: 1.5, tonic: pc('G'), lead: 'trumpet', keysStyle: 'waltz', bassStyle: 'quarters', brass: 'trumpets',
+    blurb: 'Four notes cast the spell: G, E-flat, A, B. The brass intone it; the orchestra takes it up.',
+    bpm: 120, beatsPerBar: 3, pulse: 1.5, tonic: pc('G'), lead: 'trumpet', keysStyle: 'block', bassStyle: 'quarters', brass: 'trumpets',
     melody: uraMel, chords: uraCh,
   }),
   song({
     ...SUITE, id: 'neptune', title: 'Neptune', subtitle: 'the Mystic',
-    blurb: 'Harps and celesta shimmer in five-four, and distant voices fade into space.',
+    blurb: 'Flutes sway between E minor and G-sharp minor in five-four, and the hall fades into space.',
     bpm: 72, beatsPerBar: 5, tonic: pc('E'), lead: 'flute', keysStyle: 'arpeggio',
     melody: nepMel, chords: nepCh,
   }),

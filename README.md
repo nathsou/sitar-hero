@@ -10,6 +10,7 @@ npm run dev        # http://localhost:5173
 npm run build      # type-check with TypeScript 7, then bundle to dist/
 npm run typecheck  # type-check only
 npm run preview    # serve the production build
+node scripts/check-songs.mjs [id …]  # validate every score; print the named ones bar by bar
 ```
 
 ## Playing

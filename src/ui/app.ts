@@ -326,8 +326,8 @@ export class App {
     const sections = ERAS.map((era) => {
       const items = this.catalogue.map((e, i) => [e, i] as const).filter(([e]) => e.def.era === era.id);
       if (!items.length) return '';
-      return `<div class="era" role="presentation"><span>${esc(era.title)}</span><small>${esc(era.note)}</small></div>
-        ${items.map(([e, i]) => `<div class="piece" role="option" id="piece-${i}" data-i="${i}"><span class="num">${roman(++n)}</span><span class="pc"><span class="name">${esc(e.def.title)}</span><span class="meta">${esc(e.def.composer)}${e.def.year ? ` · ${esc(e.def.year)}` : ''}</span></span><span class="right" data-best="${i}"></span></div>`).join('')}`;
+      return `<div class="era-group" role="group" aria-label="${esc(era.title)}"><div class="era" role="presentation"><span>${esc(era.title)}</span><small>${esc(era.note)}</small></div>
+        ${items.map(([e, i]) => `<div class="piece" role="option" id="piece-${i}" data-i="${i}"><span class="num">${roman(++n)}</span><span class="pc"><span class="name">${esc(e.def.title)}</span><span class="meta">${esc(e.def.composer)}${e.def.year ? ` · ${esc(e.def.year)}` : ''}</span></span><span class="right" data-best="${i}"></span></div>`).join('')}</div>`;
     }).join('');
 
     this.show(
